@@ -10,7 +10,7 @@ input[readonly],textarea[readonly] { caret-color:transparent;pointer-events:none
 .editor-day-name-group .editable-name { min-width:0;flex:0 1 auto; }
 .editor-day-name-group .editor-expand-day { flex:0 0 36px;width:36px;min-width:36px;height:36px; }
 .editor-day-card { transition:transform 290ms cubic-bezier(.2,.8,.2,1),box-shadow 220ms ease,opacity 220ms ease; }
-.editor-day-card .editor-exercise-list { display:block !important;max-height:2400px;overflow:hidden;opacity:1;transition:max-height 260ms cubic-bezier(.2,.8,.2,1),opacity 170ms ease,margin 220ms ease; }
+.editor-day-card .editor-exercise-list { display:grid !important;max-height:2400px;overflow:hidden;opacity:1;transition:max-height 260ms cubic-bezier(.2,.8,.2,1),opacity 170ms ease,margin 220ms ease; }
 .editor-day-card .editor-add-exercise { display:block !important;max-height:64px;overflow:hidden;opacity:1;transition:max-height 220ms cubic-bezier(.2,.8,.2,1),opacity 150ms ease,margin 220ms ease,padding 220ms ease; }
 .editor-day-card.is-collapsed .editor-exercise-list,.editor-day-card.is-collapsed .editor-add-exercise { display:block !important;max-height:0;opacity:0;margin-top:0 !important;margin-bottom:0 !important;padding-top:0 !important;padding-bottom:0 !important;pointer-events:none; }
 .editor-day-card .editor-day-header { transition:margin-bottom 220ms cubic-bezier(.2,.8,.2,1); }
@@ -657,7 +657,8 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 #programmeEditor .editor-day-header { min-height:40px; }
 #programmeEditor .editor-day-card.is-collapsed {
-  min-height:0 !important;padding:9px 14px !important;
+  box-sizing:border-box;height:58px !important;min-height:58px !important;max-height:58px !important;
+  padding:8px 14px !important;overflow:hidden !important;
 }
 #programmeEditor .editor-day-card.is-collapsed .editor-day-header { min-height:40px; }
 #programmeEditor .editor-day-card + .editor-day-card { margin-top:0; }
@@ -669,6 +670,7 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   display:none !important;max-height:0 !important;margin:0 !important;padding:0 !important;
   border:0 !important;opacity:0 !important;pointer-events:none !important;
 }
+#programmeEditor.editor-readonly .editor-week-card { display:none !important; }
 #programmeEditor.editor-readonly .exercise-star-button:not(.is-starred) { display:none !important; }
 #programmeEditor.editor-readonly .exercise-star-button.is-starred {
   pointer-events:none;opacity:1 !important;
@@ -695,5 +697,13 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 @media (max-width:430px) {
   #programmeEditor #editorProgrammeHeader { margin-bottom:16px; }
   #programmeEditor #editorWorkouts { gap:16px !important; }
-  #programmeEditor .editor-day-card.is-collapsed { padding:8px 13px !important; }
+  #programmeEditor .editor-day-card.is-collapsed {
+    height:56px !important;min-height:56px !important;max-height:56px !important;padding:7px 13px !important;
+  }
 }
+
+/* Exercise rows remain visibly separate in both editor modes. */
+#programmeEditor .editor-exercise-list { display:grid !important;gap:12px !important; }
+#programmeEditor .editor-exercise-row + .editor-exercise-row { margin-top:0 !important; }
+#programmeEditor .editor-add-exercise { margin-top:12px !important; }
+#programmeEditor.editor-readonly .editor-add-exercise { margin:0 !important; }
