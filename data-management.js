@@ -15,6 +15,11 @@ const PRE_RESTORE_BACKUP_KEY =
   "fitness_pre_restore_backup";
 const LAST_BACKUP_DATE_KEY = "spot_last_backup_date_v1";
 
+if (window.matchMedia?.("(display-mode: standalone)").matches &&
+    screen.orientation?.lock) {
+  screen.orientation.lock("portrait").catch(() => {});
+}
+
 document.getElementById("openDataBackup")?.addEventListener("click",()=>showPage("dataBackup"));
 document.getElementById("dataBackupBack")?.addEventListener("click",()=>showPage("profile"));
 const lastBackupDate=localStorage.getItem(LAST_BACKUP_DATE_KEY);if(lastBackupDate){const message=document.getElementById("backupMessage");if(message)message.textContent=`Last backup ${new Date(lastBackupDate).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}.`}
@@ -175,3 +180,29 @@ document
     );
     location.reload();
   });
+
+document.getElementById("clearAllAppData")?.addEventListener("click", async () => {
+  const confirmed = await showSpotConfirm(
+    "Clear all Spot data?",
+    "This permanently removes your programmes, workout history, measurements, goals and settings from this device.",
+    { confirmText: "Clear All Data", cancelText: "Cancel", danger: true }
+  );
+  if (!confirmed) return;
+
+  const keysToRemove = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key && (
+      key.startsWith("fitness_") ||
+      key.startsWith("spot_") ||
+      key === "fitnessWeights"
+    )) keysToRemove.push(key);
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+
+  await showSpotMessage(
+    "Data cleared",
+    "All Spot data has been removed from this device."
+  );
+  location.reload();
+});

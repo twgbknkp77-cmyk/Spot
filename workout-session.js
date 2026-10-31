@@ -26,7 +26,19 @@ function currentSessionExerciseIsStarred(exercise) {
   const programme = getProgrammes().find(item =>
     item.id === currentSession?.programmeId
   );
-  return Boolean(programme && isExerciseStarred(programme, exercise));
+  if (!programme) return false;
+  if (isExerciseStarred(programme, exercise)) return true;
+  const workoutName = String(currentSession?.workoutName || "").trim().toLowerCase();
+  const exerciseName = String(exercise?.name || "").trim().toLowerCase();
+  return (programme.weeks || []).some(week =>
+    (week.trainingDays || []).some(day =>
+      String(day.name || "").trim().toLowerCase() === workoutName &&
+      (day.exercises || []).some(candidate =>
+        String(candidate.name || "").trim().toLowerCase() === exerciseName &&
+        isExerciseStarred(programme, candidate)
+      )
+    )
+  );
 }
 
 function animateSessionCard(card, collapsing, done) {

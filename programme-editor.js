@@ -37,6 +37,22 @@ function saveEditedProgramme(programme) {
   if (typeof renderLibrary === "function") renderLibrary();
 }
 
+function persistProgrammeStar(programme, exercise, starred) {
+  setExerciseStarred(programme, exercise, starred);
+  if (editorOriginalProgramme?.id === programme.id) {
+    setExerciseStarred(editorOriginalProgramme, exercise, starred);
+  }
+  const programmes = getProgrammes();
+  const stored = programmes.find(item => item.id === programme.id);
+  if (stored) {
+    setExerciseStarred(stored, exercise, starred);
+    saveProgrammes(programmes);
+  }
+  if (typeof renderActiveWorkout === "function") renderActiveWorkout();
+  if (typeof renderLibrary === "function") renderLibrary();
+  if (typeof updateDashboard === "function") updateDashboard();
+}
+
 function cloneTrainingDays(trainingDays) {
   return trainingDays.map(workout => ({
     ...workout,
@@ -200,6 +216,8 @@ async function changeProgrammeDuration(programme, change) {
 }
 
 function renderProgrammeEditor() {
+  const preserveScroll = document.getElementById("programmeEditor")?.classList.contains("active");
+  const previousScroll = preserveScroll ? window.scrollY : 0;
   const programme = getEditingProgramme();
   const container = document.getElementById("editorWorkouts");
   const header = document.getElementById("editorProgrammeHeader");
@@ -358,10 +376,14 @@ function renderProgrammeEditor() {
     expandDay.setAttribute("aria-label", expandedEditorDays.has(workout.id) ? `Collapse ${workout.name}` : `Expand ${workout.name}`);
     expandDay.innerHTML = '<svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>';
     expandDay.addEventListener("click", () => {
-      expandedEditorDays.has(workout.id)
-        ? expandedEditorDays.delete(workout.id)
-        : expandedEditorDays.add(workout.id);
-      renderProgrammeEditor();
+      const expanded = !expandedEditorDays.has(workout.id);
+      expanded
+        ? expandedEditorDays.add(workout.id)
+        : expandedEditorDays.delete(workout.id);
+      card.classList.toggle("is-collapsed", !expanded);
+      expandDay.setAttribute("aria-label", expanded
+        ? `Collapse ${workout.name}`
+        : `Expand ${workout.name}`);
     });
     dayHeader.addEventListener("click", event => {
       if (!event.target.closest("button,input")) expandDay.click();
@@ -420,8 +442,7 @@ function renderProgrammeEditor() {
         star.setAttribute("aria-label", starred ? `Unstar ${exercise.name}` : `Star ${exercise.name}`);
         star.addEventListener("click", event => {
           event.stopPropagation();
-          setExerciseStarred(programme, exercise, !isExerciseStarred(programme, exercise));
-          saveEditedProgramme(programme);
+          persistProgrammeStar(programme, exercise, !isExerciseStarred(programme, exercise));
           renderProgrammeEditor();
         });
         actions.appendChild(star);
@@ -457,6 +478,7 @@ function renderProgrammeEditor() {
   [...header.querySelectorAll("input, button"), ...container.querySelectorAll("input, button")]
     .forEach(control => { control.disabled = readOnly && !control.classList.contains("editor-expand-day"); });
   weekSelect.disabled = false;
+  if (preserveScroll) requestAnimationFrame(() => window.scrollTo(0, previousScroll));
 }
 
 let exerciseDialogContext = null;

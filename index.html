@@ -12,13 +12,13 @@
 
   <title>Spot</title>
 
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest?v=2">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 
   <!-- MAIN STYLESHEET -->
   <link rel="stylesheet" href="style.css?v=46">
-  <link rel="stylesheet" href="refinements.css?v=19">
+  <link rel="stylesheet" href="refinements.css?v=20">
 </head>
 
 <body>
@@ -673,6 +673,10 @@
     <div class="data-actions"><button type="button" id="downloadBackup" class="primary-button">Save Backup</button><button type="button" id="chooseBackupFile">Restore Backup</button></div>
     <input type="file" id="backupFileInput" accept=".json,application/json" hidden>
     <p id="backupMessage" aria-live="polite"></p>
+    <div class="data-danger-zone">
+      <div><h3>Clear all data</h3><p>Remove all programmes, workouts, history, measurements and settings from this device.</p></div>
+      <button type="button" id="clearAllAppData" class="danger-button">Clear All Data</button>
+    </div>
   </div>
 </section>
 
@@ -1092,13 +1096,13 @@
   <script src="dashboard.js?v=32"></script>
   <script src="library.js?v=41"></script>
   <script src="programme-overview.js?v=4"></script>
-  <script src="programme-editor.js?v=31"></script>
-  <script src="workout-session.js?v=38"></script>
-  <script src="workout-history.js?v=20"></script>
+  <script src="programme-editor.js?v=32"></script>
+  <script src="workout-session.js?v=39"></script>
+  <script src="workout-history.js?v=21"></script>
   <script src="profile.js?v=10"></script>
   <script src="statistics.js?v=16"></script>
   <script src="measurements.js?v=4"></script>
-  <script src="data-management.js?v=4"></script>
+  <script src="data-management.js?v=5"></script>
   <script src="onboarding.js?v=1"></script>
 
 </body>
