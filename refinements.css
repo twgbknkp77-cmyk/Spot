@@ -546,3 +546,102 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 .week-navigation button svg,.workout-card-chevron svg,.programme-card-chevron svg { color:var(--orange) !important;stroke:var(--orange) !important; }
 
 .performance-latest,.performance-graph,.performance-summary-row { will-change:transform,filter; }
+
+/* Centred single-action dialogs. */
+.decision-dialog-actions:has(> button:only-child),
+.stacked-dialog-actions:has(> button:only-child),
+.programme-exit-actions:has(> button:only-child) {
+  grid-template-columns:1fr !important;
+}
+.decision-dialog-actions > button:only-child,
+.stacked-dialog-actions > button:only-child,
+.programme-exit-actions > button:only-child,
+#spotDialogCancel[hidden] + #spotDialogConfirm {
+  grid-column:1 / -1 !important;
+  justify-self:center !important;
+  width:min(100%,260px) !important;
+}
+
+/* Programme Editor visual refresh. */
+#programmeEditor { --editor-line:rgba(255,140,0,.34); }
+#programmeEditor .editor-page-header { margin-bottom:20px; }
+#programmeEditor .editor-page-header h1 { letter-spacing:-.025em; }
+#programmeEditor .editor-header-action {
+  min-width:78px;min-height:46px;padding:10px 17px;border-radius:14px;
+  box-shadow:0 8px 20px rgba(255,140,0,.14);
+}
+#editorProgrammeHeader,#editorWorkouts { display:grid;gap:14px; }
+#editorProgrammeHeader > .card,#editorWorkouts > .card { margin-bottom:0; }
+#programmeEditor .editor-setup-card,
+#programmeEditor .editor-week-card,
+#programmeEditor .editor-day-card {
+  background:linear-gradient(160deg,#202020 0%,#1d1d1d 100%);
+  border-color:var(--editor-line);
+  box-shadow:0 10px 26px rgba(0,0,0,.2);
+}
+#programmeEditor .editor-setup-card { gap:20px;padding:20px; }
+#programmeEditor .editor-setup-label,
+#programmeEditor .editor-setup-field label,
+#programmeEditor .editor-week-card label {
+  color:#aaa;font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;
+}
+#programmeEditor .editor-setup-field input,
+#programmeEditor .programme-length-control,
+#programmeEditor .editor-week-card select {
+  min-height:52px;color:var(--white);background:#181818;
+  border:1px solid #3d3d3d;border-radius:13px;
+}
+#programmeEditor:not(.editor-readonly) .editor-setup-field input,
+#programmeEditor:not(.editor-readonly) .programme-length-control,
+#programmeEditor:not(.editor-readonly) .editor-week-card select {
+  border-color:rgba(255,140,0,.38);
+  box-shadow:0 0 0 1px rgba(255,140,0,.04) inset;
+}
+#programmeEditor .programme-length-control button:first-child { border-right-color:#393939; }
+#programmeEditor .programme-length-control button:last-child { border-left-color:#393939; }
+#programmeEditor .editor-week-card { min-height:74px;padding:14px 17px; }
+#programmeEditor .editor-day-card { padding:16px;border-radius:17px; }
+#programmeEditor:not(.editor-readonly) .editor-day-card { border-color:rgba(255,140,0,.4); }
+#programmeEditor .editor-day-card:not(.is-collapsed) { box-shadow:0 13px 30px rgba(0,0,0,.25); }
+#programmeEditor .editor-day-name-group .editable-name h2 { font-size:20px;letter-spacing:-.015em; }
+#programmeEditor .editor-expand-day { color:var(--orange); }
+#programmeEditor .editor-exercise-list { gap:10px; }
+#programmeEditor .editor-exercise-row {
+  min-height:70px;padding:13px 14px;background:#181818;border-color:#353535;border-radius:13px;
+}
+#programmeEditor:not(.editor-readonly) .editor-exercise-row { border-color:rgba(255,140,0,.2); }
+#programmeEditor .editor-exercise-row strong { display:block;font-size:16px;line-height:1.25; }
+#programmeEditor .editor-exercise-row p { font-size:14px;line-height:1.35; }
+#programmeEditor .editor-add-exercise,#programmeEditor #addWorkout {
+  min-height:50px;color:var(--orange);background:rgba(255,140,0,.07);
+  border:1px solid rgba(255,140,0,.34);border-radius:13px;font-weight:800;
+}
+#programmeEditor #addWorkout { margin-top:14px; }
+#programmeEditor .editor-edit-actions { margin-top:20px !important; }
+#programmeEditor .editor-edit-actions button { border-radius:13px; }
+#programmeEditor .editor-delete-programme { margin-top:14px; }
+
+/* Read-only presentation is quieter and more like an overview. */
+#programmeEditor.editor-readonly .editor-setup-field input[readonly] {
+  min-height:auto;padding:2px 0;background:transparent;border:0;
+  font-size:22px;font-weight:800;opacity:1;
+}
+#programmeEditor.editor-readonly .programme-length-control {
+  grid-template-columns:1fr;min-height:auto;padding:2px 0;background:transparent;border:0;
+}
+#programmeEditor.editor-readonly .programme-length-control button { display:none; }
+#programmeEditor.editor-readonly .programme-length-control strong { text-align:left;font-size:17px; }
+#programmeEditor.editor-readonly .editor-day-card { border-color:rgba(255,140,0,.28); }
+
+/* A mode change rebuilds controls; suppress transitions during that single frame. */
+#programmeEditor.editor-mode-switching *,
+#programmeEditor.editor-mode-switching *::before,
+#programmeEditor.editor-mode-switching *::after {
+  animation:none !important;transition:none !important;
+}
+
+@media (max-width:430px) {
+  #programmeEditor .editor-setup-card { padding:17px; }
+  #programmeEditor .editor-day-card { padding:14px; }
+  #programmeEditor .editor-exercise-row { padding:12px; }
+}

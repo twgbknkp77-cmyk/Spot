@@ -496,6 +496,15 @@ function renderProgrammeEditor() {
   if (preserveScroll) requestAnimationFrame(() => window.scrollTo(0, previousScroll));
 }
 
+function switchProgrammeEditorMode() {
+  const page = document.getElementById("programmeEditor");
+  page?.classList.add("editor-mode-switching");
+  renderProgrammeEditor();
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    page?.classList.remove("editor-mode-switching");
+  }));
+}
+
 let exerciseDialogContext = null;
 
 function updateExerciseTypeFields() {
@@ -682,7 +691,7 @@ document.getElementById("saveProgramme")?.addEventListener("click", async () => 
   if (!programme.isDraft && !editorIsEditing) {
     editorOriginalProgramme = JSON.parse(JSON.stringify(programme));
     editorIsEditing = true;
-    renderProgrammeEditor();
+    switchProgrammeEditorMode();
     return;
   }
   if (!programme.isDraft && editorIsEditing) {
@@ -704,7 +713,7 @@ document.getElementById("saveProgramme")?.addEventListener("click", async () => 
     editorOriginalProgramme = JSON.parse(JSON.stringify(programme));
     renderLibrary();
     renderActiveWorkout();
-    renderProgrammeEditor();
+    switchProgrammeEditorMode();
     return;
   }
   programme.isDraft = false;
@@ -717,7 +726,7 @@ document.getElementById("discardProgrammeChanges")?.addEventListener("click", ()
   if (!editorOriginalProgramme) return;
   editorWorkingProgramme = JSON.parse(JSON.stringify(editorOriginalProgramme));
   editorIsEditing = false;
-  renderProgrammeEditor();
+  switchProgrammeEditorMode();
 });
 
 document.getElementById("commitProgrammeChanges")?.addEventListener("click", () => {
