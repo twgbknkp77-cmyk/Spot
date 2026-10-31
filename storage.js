@@ -19,9 +19,13 @@ function getExerciseTrackingId(exercise) {
 }
 
 function isExerciseStarred(programme, exercise) {
-  const id = getExerciseTrackingId(exercise);
-  return Boolean(id && Array.isArray(programme?.starredExerciseIds) &&
-    programme.starredExerciseIds.includes(id));
+  const ids = new Set(Array.isArray(programme?.starredExerciseIds)
+    ? programme.starredExerciseIds.map(String)
+    : []);
+  const aliases = [exercise?.trackingId, exercise?.id]
+    .filter(Boolean)
+    .map(String);
+  return aliases.some(id => ids.has(id));
 }
 
 function setExerciseStarred(programme, exercise, starred) {
@@ -30,7 +34,14 @@ function setExerciseStarred(programme, exercise, starred) {
   const ids = new Set(Array.isArray(programme.starredExerciseIds)
     ? programme.starredExerciseIds.map(String)
     : []);
-  starred ? ids.add(id) : ids.delete(id);
+  if (starred) {
+    ids.add(id);
+  } else {
+    [exercise?.trackingId, exercise?.id]
+      .filter(Boolean)
+      .map(String)
+      .forEach(alias => ids.delete(alias));
+  }
   programme.starredExerciseIds = [...ids];
 }
 
@@ -201,6 +212,8 @@ function migrateProgramme(programme) {
   // A slot is scoped to its training day, so an identically named exercise
   // in another day remains a separate progression line.
   const exerciseIdBySlot = new Map();
+  const canonicalIdByAlias = new Map();
+  const legacyStarredIds = new Set();
   weeks = weeks.map(week => ({
     ...week,
     trainingDays: (week.trainingDays || []).map((day, dayIndex) => {
@@ -215,8 +228,15 @@ function migrateProgramme(programme) {
           const occurrence = (occurrences.get(nameKey) || 0) + 1;
           occurrences.set(nameKey, occurrence);
           const slotKey = `${dayKey}::${nameKey}::${occurrence}`;
-          const sharedId = exerciseIdBySlot.get(slotKey) || exercise.id || exercise.trackingId || createId();
+          // trackingId is the stable, block-wide identity. Older versions could
+          // give each copied week a different `id`, so never let that replace an
+          // existing trackingId.
+          const sharedId = exerciseIdBySlot.get(slotKey) || exercise.trackingId || exercise.id || createId();
           if (!exerciseIdBySlot.has(slotKey)) exerciseIdBySlot.set(slotKey, sharedId);
+          [exercise.id, exercise.trackingId, sharedId]
+            .filter(Boolean)
+            .forEach(alias => canonicalIdByAlias.set(String(alias), String(sharedId)));
+          if (legacyStarred) legacyStarredIds.add(String(sharedId));
           if (exercise.id !== sharedId || exercise.trackingId !== sharedId) changed = true;
           return cleanExercise.id === sharedId && cleanExercise.trackingId === sharedId
             ? cleanExercise
@@ -233,16 +253,17 @@ function migrateProgramme(programme) {
 
   if (currentWeek !== requestedCurrentWeek) changed = true;
 
-  const validExerciseIds = new Set(weeks.flatMap(week =>
-    (week.trainingDays || []).flatMap(day =>
-      (day.exercises || []).map(getExerciseTrackingId)
-    )
-  ));
   const requestedStarredIds = Array.isArray(programme.starredExerciseIds)
-    ? programme.starredExerciseIds.map(String)
+    ? programme.starredExerciseIds.map(id =>
+        canonicalIdByAlias.get(String(id)) || String(id)
+      )
     : [];
-  const starredExerciseIds = [...new Set(requestedStarredIds)]
-    .filter(id => validExerciseIds.has(id));
+  // Never silently discard a saved star during migration. Keeping older aliases
+  // lets existing programmes survive ID changes and backup restores.
+  const starredExerciseIds = [...new Set([
+    ...requestedStarredIds,
+    ...legacyStarredIds
+  ])];
   if (JSON.stringify(starredExerciseIds) !== JSON.stringify(requestedStarredIds)) changed = true;
 
   const migrated = {
