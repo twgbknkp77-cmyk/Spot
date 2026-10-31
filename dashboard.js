@@ -625,8 +625,34 @@ function saveProgressGraphFilters() {
   }));
 }
 
-function getExerciseProgressDefinitions() {
-  return [];
+function getExerciseProgressDefinitions(scope = "current") {
+  const definitions = new Map();
+  const activeProgrammeId = getActiveProgrammeId();
+  getProgrammes()
+    .filter(programme => scope === "all" || !activeProgrammeId || programme.id === activeProgrammeId)
+    .forEach(programme => {
+    (programme.weeks || []).forEach(week => {
+      (week.trainingDays || []).forEach(day => {
+        (day.exercises || []).forEach(exercise => {
+          if (!exercise.name || !isExerciseStarred(programme, exercise)) return;
+          const trackingId = getExerciseTrackingId(exercise);
+          const key = `${programme.id}|${trackingId}`;
+          if (definitions.has(key)) return;
+          definitions.set(key, {
+            key,
+            label: `${formatSpotTitle(exercise.name)} — ${formatSpotTitle(day.name || "Workout")}`,
+            trackingId,
+            programmeId: programme.id,
+            workoutName: day.name || "Workout",
+            exerciseName: exercise.name
+          });
+        });
+      });
+    });
+    });
+  return [...definitions.values()].sort((a, b) =>
+    a.label.localeCompare(b.label)
+  );
 }
 
 function progressValue(exercise, metric) {
@@ -663,7 +689,7 @@ function drawExerciseProgressChart() {
   const display = metric === "effort" ? "actual" : requestedDisplay;
   const scope = document.getElementById("progressScopeFilter")?.value || "current";
   if (!container || !legend) return;
-  const definitions = getExerciseProgressDefinitions();
+  const definitions = getExerciseProgressDefinitions(scope);
   const names = definitions.map(item=>item.label);
   refreshProgressExerciseChoices(names);
   const visibleNames = names.filter(name => !progressHiddenExercises.has(normaliseProgressName(name)));

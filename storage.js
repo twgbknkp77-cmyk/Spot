@@ -3,7 +3,7 @@
 const LIBRARY_KEY = "fitness_workout_library";
 const LIBRARY_BACKUP_KEY = "fitness_workout_library_backup_v1";
 const ACTIVE_KEY = "fitness_active_programme";
-const PROGRAMME_SCHEMA_VERSION = 2;
+const PROGRAMME_SCHEMA_VERSION = 3;
 const DEFAULT_PROGRAMME_WEEKS = 8;
 
 function createId() {
@@ -12,6 +12,26 @@ function createId() {
   }
 
   return `fitness-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getExerciseTrackingId(exercise) {
+  return String(exercise?.trackingId || exercise?.id || "");
+}
+
+function isExerciseStarred(programme, exercise) {
+  const id = getExerciseTrackingId(exercise);
+  return Boolean(id && Array.isArray(programme?.starredExerciseIds) &&
+    programme.starredExerciseIds.includes(id));
+}
+
+function setExerciseStarred(programme, exercise, starred) {
+  const id = getExerciseTrackingId(exercise);
+  if (!programme || !id) return;
+  const ids = new Set(Array.isArray(programme.starredExerciseIds)
+    ? programme.starredExerciseIds.map(String)
+    : []);
+  starred ? ids.add(id) : ids.delete(id);
+  programme.starredExerciseIds = [...ids];
 }
 
 function formatSpotTitle(value) {
@@ -189,6 +209,8 @@ function migrateProgramme(programme) {
       return {
         ...day,
         exercises: (day.exercises || []).map(exercise => {
+          const { starred: legacyStarred, ...cleanExercise } = exercise;
+          if (Object.prototype.hasOwnProperty.call(exercise, "starred")) changed = true;
           const nameKey = String(exercise.name || "exercise").trim().toLowerCase();
           const occurrence = (occurrences.get(nameKey) || 0) + 1;
           occurrences.set(nameKey, occurrence);
@@ -196,9 +218,9 @@ function migrateProgramme(programme) {
           const sharedId = exerciseIdBySlot.get(slotKey) || exercise.id || exercise.trackingId || createId();
           if (!exerciseIdBySlot.has(slotKey)) exerciseIdBySlot.set(slotKey, sharedId);
           if (exercise.id !== sharedId || exercise.trackingId !== sharedId) changed = true;
-          return exercise.id === sharedId && exercise.trackingId === sharedId
-            ? exercise
-            : { ...exercise, id: sharedId, trackingId: sharedId };
+          return cleanExercise.id === sharedId && cleanExercise.trackingId === sharedId
+            ? cleanExercise
+            : { ...cleanExercise, id: sharedId, trackingId: sharedId };
         })
       };
     })
@@ -211,12 +233,25 @@ function migrateProgramme(programme) {
 
   if (currentWeek !== requestedCurrentWeek) changed = true;
 
+  const validExerciseIds = new Set(weeks.flatMap(week =>
+    (week.trainingDays || []).flatMap(day =>
+      (day.exercises || []).map(getExerciseTrackingId)
+    )
+  ));
+  const requestedStarredIds = Array.isArray(programme.starredExerciseIds)
+    ? programme.starredExerciseIds.map(String)
+    : [];
+  const starredExerciseIds = [...new Set(requestedStarredIds)]
+    .filter(id => validExerciseIds.has(id));
+  if (JSON.stringify(starredExerciseIds) !== JSON.stringify(requestedStarredIds)) changed = true;
+
   const migrated = {
     ...programme,
     schemaVersion: PROGRAMME_SCHEMA_VERSION,
     durationWeeks,
     currentWeek,
-    weeks
+    weeks,
+    starredExerciseIds
   };
 
   // Temporary compatibility bridge for the existing editor and workout page.

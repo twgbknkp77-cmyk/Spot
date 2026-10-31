@@ -479,7 +479,7 @@ body.session-active #workoutSession .session-action-bar .primary-button { displa
 .dashboard-week-complete-stats strong { font-size:17px; }
 .dashboard-week-complete-stats small { color:var(--grey);font-size:9px;text-transform:uppercase;letter-spacing:.03em; }
 
-.workouts-week-complete { border-color:rgba(255,140,0,.42) !important;background:linear-gradient(145deg,rgba(255,140,0,.09),var(--card) 55%); }
+.workouts-week-complete { background:var(--card) !important; }
 .workouts-week-complete header { display:flex;align-items:center;gap:13px;margin-bottom:18px; }
 .workouts-week-complete header h2,.workouts-week-complete header p { margin:0; }
 .workouts-week-complete header small { color:var(--orange);font-weight:850;text-transform:uppercase;letter-spacing:.05em; }

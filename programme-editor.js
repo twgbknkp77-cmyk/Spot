@@ -409,7 +409,30 @@ function renderProgrammeEditor() {
       ]);
       const actions = document.createElement("div");
       actions.className = "editor-exercise-actions";
-      actions.append(menu);
+      const canEdit = programme.isDraft || editorIsEditing;
+      const starred = isExerciseStarred(programme, exercise);
+      if (canEdit) {
+        const star = document.createElement("button");
+        star.type = "button";
+        star.className = "exercise-star-button";
+        star.classList.toggle("is-starred", starred);
+        star.innerHTML = '<svg aria-hidden="true"><use href="#icon-star-round"></use></svg>';
+        star.setAttribute("aria-label", starred ? `Unstar ${exercise.name}` : `Star ${exercise.name}`);
+        star.addEventListener("click", event => {
+          event.stopPropagation();
+          setExerciseStarred(programme, exercise, !isExerciseStarred(programme, exercise));
+          saveEditedProgramme(programme);
+          renderProgrammeEditor();
+        });
+        actions.appendChild(star);
+      } else if (starred) {
+        const star = document.createElement("svg");
+        star.classList.add("display-star");
+        star.setAttribute("aria-label", "Starred exercise");
+        star.innerHTML = '<use href="#icon-star-round"></use>';
+        actions.appendChild(star);
+      }
+      actions.appendChild(menu);
       row.append(copy, actions);
       row.addEventListener("click", event => {
         if (!(programme.isDraft || editorIsEditing) || event.target.closest("button,details,summary")) return;

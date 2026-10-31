@@ -47,10 +47,16 @@ function viewWorkoutBlockHistory(sessions){
  [...sessions].sort((a,b)=>new Date(b.finishedAt)-new Date(a.finishedAt)).forEach(session=>{const card=document.createElement("div");card.className="card history-session-card";const title=document.createElement("h3");title.textContent=formatSpotTitle(session.workoutName);const meta=document.createElement("p");meta.textContent=`${historyDate(session.finishedAt)}${session.weekNumber?` • Week ${session.weekNumber}`:""}`;card.append(title,meta,historyButton("View",()=>viewWorkoutHistoryDetails(session,sessions)));container.appendChild(card)})
 }
 
-function appendHistoryExercise(card,exercise){
- const currentlyStarred=getProgrammes().some(programme=>(programme.weeks||[]).some(week=>(week.trainingDays||[]).some(day=>(day.exercises||[]).some(item=>item.starred&&String(item.name||"").trim().toLowerCase()===String(exercise.name||"").trim().toLowerCase()))));
+function historyExerciseIsStarred(session,exercise){
+ const programme=getProgrammes().find(item=>item.id===session?.programmeId);if(!programme)return false;
+ if(isExerciseStarred(programme,exercise))return true;
+ const workoutName=String(session?.workoutName||"").trim().toLowerCase(),exerciseName=String(exercise.name||"").trim().toLowerCase();
+ return(programme.weeks||[]).some(week=>(week.trainingDays||[]).some(day=>String(day.name||"").trim().toLowerCase()===workoutName&&(day.exercises||[]).some(item=>String(item.name||"").trim().toLowerCase()===exerciseName&&isExerciseStarred(programme,item))));
+}
+function appendHistoryExercise(card,exercise,session){
+ const currentlyStarred=historyExerciseIsStarred(session,exercise);
  const titleRow=document.createElement("div");titleRow.className="history-exercise-title";const title=document.createElement("h3");title.textContent=formatSpotTitle(exercise.name);titleRow.appendChild(title);
- if(exercise.starred||currentlyStarred){const star=document.createElement("svg");star.classList.add("display-star");star.innerHTML='<use href="#icon-star-round"></use>';titleRow.appendChild(star)}card.appendChild(titleRow);
+ if(currentlyStarred){const star=document.createElement("svg");star.classList.add("display-star");star.innerHTML='<use href="#icon-star-round"></use>';titleRow.appendChild(star)}card.appendChild(titleRow);
  if(exercise.sessionNote){const note=document.createElement("p");note.className="previous-session-note";note.textContent=exercise.sessionNote;card.appendChild(note)}
  if(exercise.type==="cardio"){const row=document.createElement("p");row.className="history-set-row";row.textContent=`${Number(exercise.durationMinutes)||0} min`;card.appendChild(row)}
  else (exercise.sets||[]).filter(set=>set.completed||set.weight!==""||set.reps!=="").forEach((set,index)=>{const row=document.createElement("p");row.className="history-set-row";row.textContent=`Set ${index+1}: ${Number(set.weight)||0} kg × ${Number(set.reps)||0} reps`;card.appendChild(row)});
@@ -62,7 +68,7 @@ function viewWorkoutHistoryDetails(session,blockSessions=[session]){
  const summary=document.createElement("div");summary.className="card history-detail-summary";summary.innerHTML=`<h2>${formatSpotTitle(session.workoutName)}</h2><p>${historyDate(session.finishedAt)}${session.weekNumber?` • Week ${session.weekNumber}`:""}</p>`;
  summary.appendChild(historyButton("Edit",()=>editWorkoutHistorySession(session,blockSessions),"history-edit-button"));container.appendChild(summary);
  if(session.workoutNote){const note=document.createElement("div");note.className="card history-workout-note";note.innerHTML="<h3>Workout Comments</h3>";note.appendChild(commentList(session.workoutNote));container.appendChild(note)}
- (session.exercises||[]).forEach(exercise=>{const card=document.createElement("div");card.className="card history-exercise-card";appendHistoryExercise(card,exercise);container.appendChild(card)})
+ (session.exercises||[]).forEach(exercise=>{const card=document.createElement("div");card.className="card history-exercise-card";appendHistoryExercise(card,exercise,session);container.appendChild(card)})
 }
 
 function editWorkoutHistorySession(session,blockSessions){

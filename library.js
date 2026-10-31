@@ -1218,6 +1218,11 @@ function renderLibrary() {
 
 
 // COMPACT WORKOUTS PAGE
+function libraryExerciseIsStarred(programme, exercise) {
+  return typeof isExerciseStarred === "function" &&
+    isExerciseStarred(programme, exercise);
+}
+
 function completedWeekSummary(programme, week, history) {
   const sessions = history.filter(session =>
     session.programmeId === programme.id &&
@@ -1353,6 +1358,13 @@ function renderActiveWorkout() {
         const exerciseName = document.createElement("strong");
         exerciseName.textContent = formatSpotTitle(exercise.name);
         row.appendChild(exerciseName);
+        if (libraryExerciseIsStarred(programme, exercise)) {
+          const star = document.createElement("svg");
+          star.classList.add("display-star");
+          star.setAttribute("aria-label", "Starred exercise");
+          star.innerHTML = '<use href="#icon-star-round"></use>';
+          row.appendChild(star);
+        }
         const prescription = document.createElement("p");
         prescription.textContent = formatExercisePrescription(exercise);
         row.appendChild(prescription);
