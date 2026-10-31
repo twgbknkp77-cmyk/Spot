@@ -566,7 +566,7 @@ function renderWorkoutSessionLegacy() {
         "No previous result for this exercise.";
     }
 
-    card.append(heading, previousHeading);
+    card.append(titleRow, previousHeading);
 
     exercise.sets.forEach((set, setIndex) => {
       const row = document.createElement("div");

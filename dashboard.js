@@ -643,6 +643,7 @@ function getExerciseProgressDefinitions(scope = "current") {
             label: `${formatSpotTitle(exercise.name)} — ${formatSpotTitle(day.name || "Workout")}`,
             trackingId,
             programmeId: programme.id,
+            programmeName: programme.name || "",
             workoutName: day.name || "Workout",
             exerciseName: exercise.name
           });
@@ -702,29 +703,37 @@ function drawExerciseProgressChart() {
   let history = [];
   try { history = JSON.parse(localStorage.getItem("fitness_workout_history") || "[]"); } catch {}
   const activeId = getActiveProgrammeId();
+  const activeProgramme = getProgrammes().find(item => item.id === activeId);
+  const sessionDate = session => session.finishedAt || session.completedAt || session.date || session.startedAt;
   const sessions = (Array.isArray(history) ? history : [])
-    .filter(session => scope === "all" || !activeId || session.programmeId === activeId)
-    .filter(session => session.finishedAt)
-    .sort((a, b) => new Date(a.finishedAt) - new Date(b.finishedAt));
+    .filter(session => scope === "all" || !activeId ||
+      session.programmeId === activeId ||
+      normaliseProgressName(session.programmeName) === normaliseProgressName(activeProgramme?.name))
+    .filter(session => sessionDate(session))
+    .sort((a, b) => new Date(sessionDate(a)) - new Date(sessionDate(b)));
   const series = visibleNames.map((name, colourIndex) => {
     const definition=definitions.find(item=>item.label===name);
     return ({
     name, colour: progressLineColours[names.indexOf(name) % progressLineColours.length],
     points: sessions.flatMap(session => {
-      if(definition?.programmeId&&session.programmeId!==definition.programmeId)return[];
+      const programmeMatches =
+        !definition?.programmeId ||
+        session.programmeId === definition.programmeId ||
+        normaliseProgressName(session.programmeName) === normaliseProgressName(definition.programmeName);
+      if(!programmeMatches)return[];
       if(definition?.workoutName&&normaliseProgressName(session.workoutName)!==normaliseProgressName(definition.workoutName))return[];
       const exercise = (session.exercises || []).find(item =>
         (definition?.trackingId&&item.trackingId===definition.trackingId) ||
         normaliseProgressName(item.name)===normaliseProgressName(definition?.exerciseName)
       );
       const value = exercise ? progressValue(exercise, metric) : 0;
-      return value > 0 ? [{ value, date: session.finishedAt }] : [];
+      return value > 0 ? [{ value, date: sessionDate(session) }] : [];
     })
   })});
   if (display === "growth") {
     series.forEach(item => {
       const baseline=item.points.find(point=>point.value>0)?.value;
-      item.points=baseline && item.points.length>1 ? item.points.map(point=>({...point,value:((point.value-baseline)/baseline)*100})) : [];
+      item.points=baseline ? item.points.map(point=>({...point,value:((point.value-baseline)/baseline)*100})) : [];
     });
   }
   const allPoints = series.flatMap(item => item.points);
