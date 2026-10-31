@@ -645,3 +645,55 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   #programmeEditor .editor-day-card { padding:14px; }
   #programmeEditor .editor-exercise-row { padding:12px; }
 }
+
+/* Programme Editor spacing and compact collapsed days. */
+#programmeEditor #editorProgrammeHeader { margin-bottom:18px; }
+#programmeEditor #editorWorkouts { gap:18px !important; }
+#programmeEditor .editor-week-card { margin-bottom:2px; }
+#programmeEditor .editor-day-card {
+  min-height:0 !important;
+  border-color:rgba(255,140,0,.3) !important;
+  transition:box-shadow 180ms ease !important;
+}
+#programmeEditor .editor-day-header { min-height:40px; }
+#programmeEditor .editor-day-card.is-collapsed {
+  min-height:0 !important;padding:9px 14px !important;
+}
+#programmeEditor .editor-day-card.is-collapsed .editor-day-header { min-height:40px; }
+#programmeEditor .editor-day-card + .editor-day-card { margin-top:0; }
+#programmeEditor .editor-exercise-row,
+#programmeEditor:not(.editor-readonly) .editor-exercise-row {
+  border-color:#383838;
+}
+#programmeEditor.editor-readonly .editor-add-exercise {
+  display:none !important;max-height:0 !important;margin:0 !important;padding:0 !important;
+  border:0 !important;opacity:0 !important;pointer-events:none !important;
+}
+#programmeEditor.editor-readonly .exercise-star-button:not(.is-starred) { display:none !important; }
+#programmeEditor.editor-readonly .exercise-star-button.is-starred {
+  pointer-events:none;opacity:1 !important;
+}
+#programmeEditor.editor-readonly .editor-day-card:not(.is-collapsed) .editor-exercise-list {
+  margin-bottom:0 !important;
+}
+#programmeEditor.editor-readonly .editor-day-card:not(.is-collapsed) {
+  padding-bottom:16px;
+}
+
+/* View and edit modes share the same card treatment, avoiding a border flash. */
+#programmeEditor.editor-readonly .editor-day-card,
+#programmeEditor:not(.editor-readonly) .editor-day-card {
+  background:linear-gradient(160deg,#202020 0%,#1d1d1d 100%);
+  border-color:rgba(255,140,0,.3) !important;
+}
+#programmeEditor.editor-mode-switching,
+#programmeEditor.editor-mode-switching #editorWorkouts,
+#programmeEditor.editor-mode-switching .editor-day-card {
+  contain:paint;
+}
+
+@media (max-width:430px) {
+  #programmeEditor #editorProgrammeHeader { margin-bottom:16px; }
+  #programmeEditor #editorWorkouts { gap:16px !important; }
+  #programmeEditor .editor-day-card.is-collapsed { padding:8px 13px !important; }
+}

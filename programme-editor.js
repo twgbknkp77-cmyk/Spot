@@ -446,28 +446,19 @@ function renderProgrammeEditor() {
       ]);
       const actions = document.createElement("div");
       actions.className = "editor-exercise-actions";
-      const canEdit = programme.isDraft || editorIsEditing;
       const starred = isExerciseStarred(programme, exercise);
-      if (canEdit) {
-        const star = document.createElement("button");
-        star.type = "button";
-        star.className = "exercise-star-button";
-        star.classList.toggle("is-starred", starred);
-        star.innerHTML = '<svg aria-hidden="true"><use href="#icon-star-round"></use></svg>';
-        star.setAttribute("aria-label", starred ? `Unstar ${exercise.name}` : `Star ${exercise.name}`);
-        star.addEventListener("click", event => {
-          event.stopPropagation();
-          persistProgrammeStar(programme, workout, exercise, !isExerciseStarred(programme, exercise));
-          renderProgrammeEditor();
-        });
-        actions.appendChild(star);
-      } else if (starred) {
-        const star = document.createElement("svg");
-        star.classList.add("display-star");
-        star.setAttribute("aria-label", "Starred exercise");
-        star.innerHTML = '<use href="#icon-star-round"></use>';
-        actions.appendChild(star);
-      }
+      const star = document.createElement("button");
+      star.type = "button";
+      star.className = "exercise-star-button";
+      star.classList.toggle("is-starred", starred);
+      star.innerHTML = '<svg aria-hidden="true"><use href="#icon-star-round"></use></svg>';
+      star.setAttribute("aria-label", starred ? `Unstar ${exercise.name}` : `Star ${exercise.name}`);
+      star.addEventListener("click", event => {
+        event.stopPropagation();
+        persistProgrammeStar(programme, workout, exercise, !isExerciseStarred(programme, exercise));
+        renderProgrammeEditor();
+      });
+      actions.appendChild(star);
       actions.appendChild(menu);
       row.append(copy, actions);
       row.addEventListener("click", event => {
@@ -503,6 +494,35 @@ function switchProgrammeEditorMode() {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     page?.classList.remove("editor-mode-switching");
   }));
+}
+
+function enterProgrammeEditMode(programme) {
+  const page = document.getElementById("programmeEditor");
+  const header = document.getElementById("editorProgrammeHeader");
+  const container = document.getElementById("editorWorkouts");
+  page?.classList.remove("editor-readonly");
+  document.getElementById("saveProgramme").hidden = true;
+  document.getElementById("editorEditActions").hidden = false;
+
+  header?.querySelectorAll("input,button").forEach(control => {
+    control.disabled = false;
+  });
+  const nameInput = document.getElementById("editorProgrammeName");
+  if (nameInput) nameInput.readOnly = false;
+  const removeWeek = header?.querySelector('[aria-label="Remove one week"]');
+  const addWeek = header?.querySelector('[aria-label="Add one week"]');
+  if (removeWeek) removeWeek.disabled = programme.durationWeeks <= 1;
+  if (addWeek) addWeek.disabled = programme.durationWeeks >= 52;
+
+  container?.querySelectorAll("input,button").forEach(control => {
+    control.disabled = false;
+  });
+  container?.querySelectorAll(".editor-day-card").forEach(card => {
+    card.draggable = true;
+  });
+  container?.querySelectorAll(".editor-exercise-row").forEach(row => {
+    row.classList.add("is-editable");
+  });
 }
 
 let exerciseDialogContext = null;
@@ -674,7 +694,11 @@ async function leaveProgrammeEditor() {
     editorIsEditing = false;
   }
   if (!programme?.isDraft) {
-    showPage("library");
+    if (typeof openProgrammeOverview === "function") {
+      openProgrammeOverview(programme.id);
+    } else {
+      showPage("library");
+    }
     return;
   }
   document.getElementById("programmeExitDialog")?.showModal();
@@ -691,7 +715,7 @@ document.getElementById("saveProgramme")?.addEventListener("click", async () => 
   if (!programme.isDraft && !editorIsEditing) {
     editorOriginalProgramme = JSON.parse(JSON.stringify(programme));
     editorIsEditing = true;
-    switchProgrammeEditorMode();
+    enterProgrammeEditMode(programme);
     return;
   }
   if (!programme.isDraft && editorIsEditing) {
