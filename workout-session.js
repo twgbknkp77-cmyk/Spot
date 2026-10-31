@@ -22,30 +22,6 @@ function updateWorkoutCommentIndicator() {
   document.getElementById("openWorkoutComment")?.classList.toggle("has-comment", Boolean(String(currentSession?.workoutNote || "").trim()));
 }
 
-function sessionExerciseIsStarred(exercise) {
-  if (exercise.starred) return true;
-  const wantedId=String(exercise.trackingId||exercise.id||"");
-  const wantedName=String(exercise.name||"").trim().toLowerCase();
-  const programmes=getProgrammes();
-  const matchingProgramme=programmes.find(programme=>programme.id===currentSession?.programmeId);
-  if(matchingProgramme&&typeof isExerciseStarred==="function")return isExerciseStarred(matchingProgramme,exercise);
-  const candidates=matchingProgramme?[matchingProgramme]:programmes;
-  return candidates.some(programme => (programme.weeks || []).some(week =>
-    (week.trainingDays || []).some(day => {
-      const sameWorkout =
-        (currentSession?.workoutId && day.id === currentSession.workoutId) ||
-        String(day.name || "").trim().toLowerCase() ===
-          String(currentSession?.workoutName || "").trim().toLowerCase();
-      return sameWorkout && (day.exercises || []).some(item =>
-        item.starred && (
-          (wantedId && String(item.trackingId || item.id || "") === wantedId) ||
-          String(item.name || "").trim().toLowerCase() === wantedName
-        )
-      );
-    })
-  ));
-}
-
 function animateSessionCard(card, collapsing, done) {
   if (!card || matchMedia("(prefers-reduced-motion: reduce)").matches) { done(); return; }
   const start = card.getBoundingClientRect().height;
@@ -445,7 +421,6 @@ function startWorkout(workoutId) {
       id: exercise.id,
       trackingId: exercise.trackingId,
       name: exercise.name,
-      starred: Boolean(exercise.starred),
       type: exercise.type || "strength",
       note: exercise.note || "",
       sessionNote: "",
@@ -517,7 +492,6 @@ function renderWorkoutSessionLegacy() {
   container.innerHTML = "";
 
   currentSession.exercises.forEach(exercise => {
-    exercise.starred=sessionExerciseIsStarred(exercise);
     const card = document.createElement("div");
     card.className = "card session-exercise-card";
     card.classList.toggle("exercise-is-complete", Boolean(exercise.completed));
@@ -528,15 +502,7 @@ function renderWorkoutSessionLegacy() {
     titleRow.className = "session-exercise-title";
     const heading = document.createElement("h2");
     heading.textContent = formatSpotTitle(exercise.name);
-    if (exercise.starred) {
-      const star = document.createElement("svg");
-      star.classList.add("display-star");
-      star.setAttribute("aria-label", "Starred exercise");
-      star.innerHTML = '<use href="#icon-star-round"></use>';
-      titleRow.append(heading, star);
-    } else {
-      titleRow.appendChild(heading);
-    }
+    titleRow.appendChild(heading);
 
     const completeButton = document.createElement("button");
     completeButton.type = "button";
@@ -716,7 +682,6 @@ function renderWorkoutSession() {
   container.innerHTML = "";
 
   currentSession.exercises.forEach(exercise => {
-    exercise.starred=sessionExerciseIsStarred(exercise);
     const card = document.createElement("div");
     card.className = "card session-exercise-card";
     card.classList.toggle("exercise-is-complete", Boolean(exercise.completed));
@@ -729,13 +694,6 @@ function renderWorkoutSession() {
     const heading = document.createElement("h2");
     heading.textContent = formatSpotTitle(exercise.name);
     titleRow.appendChild(heading);
-    if (exercise.starred) {
-      const star = document.createElement("svg");
-      star.classList.add("display-star");
-      star.setAttribute("aria-label", "Starred exercise");
-      star.innerHTML = '<use href="#icon-star-round"></use>';
-      titleRow.appendChild(star);
-    }
 
     const completeButton = document.createElement("button");
     completeButton.type = "button";

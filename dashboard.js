@@ -417,16 +417,14 @@ function updateWorkoutSummary() {
     showCompletedPanel(true);
     statusCard?.classList.add("is-week-complete");
     if(nextLabel)nextLabel.textContent=`Week ${finishedWeek.weekNumber} Complete`;
-    nextName.textContent=`Excellent work — every workout is complete. ${finishedWeek.minutes||0} min · ${(finishedWeek.volume||0).toLocaleString()} kg volume`;
+    nextName.textContent="Week Complete";
     progressCount.textContent=`${finishedWeek.workouts||finishedWeek.planned||0}/${finishedWeek.planned||finishedWeek.workouts||0}`;
     progressFill.classList.add("progress-fill-animate");progressFill.style.width="100%";
     dashboardNextWorkoutId=null;dashboardNextDestination="workouts";dashboardStartWorkout.hidden=true;
     const setText=(id,value)=>{const element=document.getElementById(id);if(element)element.textContent=value};
     setText("dashboardCompleteWeekLabel",`Week ${finishedWeek.weekNumber}`);
-    setText("dashboardCompleteWorkouts",`${finishedWeek.workouts||finishedWeek.planned||0}/${finishedWeek.planned||finishedWeek.workouts||0}`);
     setText("dashboardCompleteMinutes",String(finishedWeek.minutes||0));
     setText("dashboardCompleteVolume",(finishedWeek.volume||0).toLocaleString());
-    setText("dashboardCompleteEffort",finishedWeek.effort?Number(finishedWeek.effort).toFixed(1):"—");
     return;
   }
   showCompletedPanel(false);
@@ -627,18 +625,8 @@ function saveProgressGraphFilters() {
   }));
 }
 
-function getStarredExerciseDefinitions() {
-  const definitions = new Map();
-  getProgrammes().forEach(programme => (programme.weeks || []).forEach(week =>
-    (week.trainingDays || []).forEach(day => (day.exercises || []).forEach(exercise => {
-      if (isExerciseStarred(programme, exercise) && exercise.name) {
-        const label=`${formatSpotTitle(exercise.name)} — ${day.name||"Workout"}`;
-        const key=exercise.trackingId||`${programme.id}|${normaliseProgressName(day.name)}|${normaliseProgressName(exercise.name)}`;
-        definitions.set(key,{key,label,trackingId:exercise.trackingId||"",programmeId:programme.id,workoutName:day.name||"Workout",exerciseName:exercise.name});
-      }
-    }))
-  ));
-  return [...definitions.values()].sort((a, b) => a.label.localeCompare(b.label));
+function getExerciseProgressDefinitions() {
+  return [];
 }
 
 function progressValue(exercise, metric) {
@@ -675,7 +663,7 @@ function drawExerciseProgressChart() {
   const display = metric === "effort" ? "actual" : requestedDisplay;
   const scope = document.getElementById("progressScopeFilter")?.value || "current";
   if (!container || !legend) return;
-  const definitions = getStarredExerciseDefinitions();
+  const definitions = getExerciseProgressDefinitions();
   const names = definitions.map(item=>item.label);
   refreshProgressExerciseChoices(names);
   const visibleNames = names.filter(name => !progressHiddenExercises.has(normaliseProgressName(name)));
@@ -683,7 +671,7 @@ function drawExerciseProgressChart() {
   if (title) title.textContent = "Exercise Progress";
   const summary=document.getElementById("exerciseProgressFilterSummary");
   if(summary) summary.textContent=`${metric === "weight" ? "Weight" : metric === "reps" ? "Repetitions" : "Effort"} · ${display === "growth" ? "Growth %" : "Actual Values"} · ${visibleNames.length === names.length ? "All Exercises" : `${visibleNames.length} Selected`}`;
-  if (!names.length) { container.innerHTML = '<p class="chart-empty-state">Star an exercise to track it here.</p>'; legend.innerHTML = ""; return; }
+  if (!names.length) { container.innerHTML = '<p class="chart-empty-state">No exercise progress to display.</p>'; legend.innerHTML = ""; return; }
 
   let history = [];
   try { history = JSON.parse(localStorage.getItem("fitness_workout_history") || "[]"); } catch {}

@@ -472,7 +472,7 @@ body.session-active #workoutSession .session-action-bar .primary-button { displa
 .dashboard-week-complete header p { margin-top:3px;color:var(--grey);font-size:14px; }
 .dashboard-week-complete-check { display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;color:#111;background:var(--orange);border-radius:50%;box-shadow:0 0 0 7px rgba(255,140,0,.1); }
 .dashboard-week-complete-check svg { width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round; }
-.dashboard-week-complete-stats { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px; }
+.dashboard-week-complete-stats { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }
 .dashboard-week-complete-stats span { display:grid;gap:3px;padding:12px 5px;text-align:center;background:#171717;border:1px solid #393939;border-radius:12px; }
 .dashboard-week-complete-stats strong { font-size:17px; }
 .dashboard-week-complete-stats small { color:var(--grey);font-size:9px;text-transform:uppercase;letter-spacing:.03em; }
@@ -482,7 +482,7 @@ body.session-active #workoutSession .session-action-bar .primary-button { displa
 .workouts-week-complete header h2,.workouts-week-complete header p { margin:0; }
 .workouts-week-complete header small { color:var(--orange);font-weight:850;text-transform:uppercase;letter-spacing:.05em; }
 .workouts-week-complete header p { margin-top:4px;color:var(--grey);font-size:14px; }
-.workouts-week-statistics { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px; }
+.workouts-week-statistics { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }
 .workouts-week-statistics span { display:grid;gap:3px;padding:11px 5px;text-align:center;background:#171717;border:1px solid #353535;border-radius:11px; }
 .workouts-week-statistics strong { font-size:17px; }
 .workouts-week-statistics small { color:var(--grey);font-size:10px;text-transform:uppercase; }

@@ -1218,12 +1218,6 @@ function renderLibrary() {
 
 
 // COMPACT WORKOUTS PAGE
-function libraryExerciseIsStarred(programme, exercise) {
-  return typeof isExerciseStarred === "function"
-    ? isExerciseStarred(programme, exercise)
-    : Boolean(exercise?.starred);
-}
-
 function completedWeekSummary(programme, week, history) {
   const sessions = history.filter(session =>
     session.programmeId === programme.id &&
@@ -1246,18 +1240,9 @@ function completedWeekSummary(programme, week, history) {
 
 function createCompletedWeekCard(programme, week, history) {
   const stats = completedWeekSummary(programme, week, history);
-  const previousWeek = programme.weeks?.[Number(week.number) - 2];
-  const previous = previousWeek ? completedWeekSummary(programme, previousWeek, history) : null;
-  let insight = "";
-  if (previous?.volume > 0) {
-    const change = Math.round(((stats.volume - previous.volume) / previous.volume) * 100);
-    insight = change > 0 ? `Training volume increased by ${change}% from Week ${previousWeek.number}.`
-      : change < 0 ? `Training volume was ${Math.abs(change)}% lower than Week ${previousWeek.number}.`
-      : `Training volume matched Week ${previousWeek.number}.`;
-  }
   const card = document.createElement("section");
   card.className = "card workouts-week-complete";
-  card.innerHTML = `<header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${week.number}</small><h2>Week Complete</h2><p>Excellent work — every workout is complete.</p></div></header><div class="workouts-week-statistics"><span><strong>${stats.workouts}/${stats.planned}</strong><small>Workouts</small></span><span><strong>${stats.minutes}</strong><small>Minutes</small></span><span><strong>${stats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${stats.sets}</strong><small>Sets</small></span><span><strong>${stats.effort ? stats.effort.toFixed(1) : "—"}</strong><small>Avg effort</small></span></div>${insight?`<p class="week-complete-insight">${insight}</p>`:""}`;
+  card.innerHTML = `<header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${week.number}</small><h2>Week Complete</h2></div></header><div class="workouts-week-statistics"><span><strong>${stats.minutes}</strong><small>Minutes</small></span><span><strong>${stats.volume.toLocaleString()}</strong><small>Volume kg</small></span></div>`;
   return card;
 }
 
@@ -1367,15 +1352,7 @@ function renderActiveWorkout() {
         row.className = "exercise-row";
         const exerciseName = document.createElement("strong");
         exerciseName.textContent = formatSpotTitle(exercise.name);
-        if (libraryExerciseIsStarred(programme, exercise)) {
-          const star = document.createElement("svg");
-          star.classList.add("display-star");
-          star.setAttribute("aria-label", "Starred exercise");
-          star.innerHTML = '<use href="#icon-star-round"></use>';
-          row.append(exerciseName, star);
-        } else {
-          row.appendChild(exerciseName);
-        }
+        row.appendChild(exerciseName);
         const prescription = document.createElement("p");
         prescription.textContent = formatExercisePrescription(exercise);
         row.appendChild(prescription);

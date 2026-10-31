@@ -14,18 +14,6 @@ function createId() {
   return `fitness-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function isExerciseStarred(programme, exercise) {
-  if (exercise?.starred) return true;
-  const wantedTrackingId = String(exercise?.trackingId || "");
-  const wantedId = String(exercise?.id || "");
-  return (programme?.weeks || []).some(week => (week.trainingDays || []).some(day =>
-    (day.exercises || []).some(candidate => Boolean(candidate.starred) && (
-      (wantedTrackingId && String(candidate.trackingId || "") === wantedTrackingId) ||
-      (wantedId && String(candidate.id || "") === wantedId)
-    ))
-  ));
-}
-
 function formatSpotTitle(value) {
   return String(value || "").replace(/(^|[\s/()\-])([a-z])/g, (_, boundary, letter) => boundary + letter.toUpperCase());
 }
@@ -215,28 +203,6 @@ function migrateProgramme(programme) {
       };
     })
   }));
-
-  // A star belongs to the permanent tracking identity, so it automatically
-  // appears in workout previews, active sessions and progress history.
-  const starredTrackingIds = new Set();
-  weeks.forEach(week => (week.trainingDays || []).forEach(day =>
-    (day.exercises || []).forEach(exercise => {
-      if (exercise.starred && exercise.trackingId) starredTrackingIds.add(exercise.trackingId);
-    })
-  ));
-  if (starredTrackingIds.size) {
-    weeks = weeks.map(week => ({
-      ...week,
-      trainingDays: (week.trainingDays || []).map(day => ({
-        ...day,
-        exercises: (day.exercises || []).map(exercise => {
-          const shouldBeStarred = starredTrackingIds.has(exercise.trackingId);
-          if (shouldBeStarred && !exercise.starred) changed = true;
-          return shouldBeStarred ? { ...exercise, starred: true } : exercise;
-        })
-      }))
-    }));
-  }
 
   const requestedCurrentWeek = Number(programme.currentWeek);
   const currentWeek = Number.isInteger(requestedCurrentWeek)
