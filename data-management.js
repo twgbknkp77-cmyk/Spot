@@ -27,6 +27,9 @@ const lastBackupDate=localStorage.getItem(LAST_BACKUP_DATE_KEY);if(lastBackupDat
 
 // COLLECT THE CURRENT APP DATA WITHOUT CHANGING IT
 function collectFitnessData() {
+  // Force the latest programme migration before exporting so a backup never
+  // preserves an obsolete star schema after the app has been updated.
+  if (typeof getProgrammes === "function") getProgrammes();
   const data = {};
 
   FITNESS_BACKUP_KEYS.forEach(key => {
@@ -154,6 +157,9 @@ document
           throw new Error("Invalid backup value");
         }
       });
+
+      // Convert restored legacy programme data before the refreshed UI reads it.
+      if (typeof getProgrammes === "function") getProgrammes();
     } catch {
       FITNESS_BACKUP_KEYS.forEach(key => {
         const value = currentData[key];

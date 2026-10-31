@@ -19,6 +19,9 @@ function getExerciseTrackingId(exercise) {
 }
 
 function isExerciseStarred(programme, exercise) {
+  // Read the original per-exercise flag as a compatibility fallback until the
+  // programme is migrated and saved with programme-level starred IDs.
+  if (exercise?.starred === true) return true;
   const ids = new Set(Array.isArray(programme?.starredExerciseIds)
     ? programme.starredExerciseIds.map(String)
     : []);
