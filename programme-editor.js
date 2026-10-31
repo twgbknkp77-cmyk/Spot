@@ -37,15 +37,30 @@ function saveEditedProgramme(programme) {
   if (typeof renderLibrary === "function") renderLibrary();
 }
 
-function persistProgrammeStar(programme, exercise, starred) {
-  setExerciseStarred(programme, exercise, starred);
+function applyStarAcrossProgramme(programme, workoutName, exerciseName, starred) {
+  const dayKey = String(workoutName || "").trim().toLowerCase();
+  const exerciseKey = String(exerciseName || "").trim().toLowerCase();
+  (programme?.weeks || []).forEach(week => {
+    (week.trainingDays || []).forEach(day => {
+      if (String(day.name || "").trim().toLowerCase() !== dayKey) return;
+      (day.exercises || []).forEach(item => {
+        if (String(item.name || "").trim().toLowerCase() === exerciseKey) {
+          setExerciseStarred(programme, item, starred);
+        }
+      });
+    });
+  });
+}
+
+function persistProgrammeStar(programme, workout, exercise, starred) {
+  applyStarAcrossProgramme(programme, workout.name, exercise.name, starred);
   if (editorOriginalProgramme?.id === programme.id) {
-    setExerciseStarred(editorOriginalProgramme, exercise, starred);
+    applyStarAcrossProgramme(editorOriginalProgramme, workout.name, exercise.name, starred);
   }
   const programmes = getProgrammes();
   const stored = programmes.find(item => item.id === programme.id);
   if (stored) {
-    setExerciseStarred(stored, exercise, starred);
+    applyStarAcrossProgramme(stored, workout.name, exercise.name, starred);
     saveProgrammes(programmes);
   }
   if (typeof renderActiveWorkout === "function") renderActiveWorkout();
@@ -442,7 +457,7 @@ function renderProgrammeEditor() {
         star.setAttribute("aria-label", starred ? `Unstar ${exercise.name}` : `Star ${exercise.name}`);
         star.addEventListener("click", event => {
           event.stopPropagation();
-          persistProgrammeStar(programme, exercise, !isExerciseStarred(programme, exercise));
+          persistProgrammeStar(programme, workout, exercise, !isExerciseStarred(programme, exercise));
           renderProgrammeEditor();
         });
         actions.appendChild(star);

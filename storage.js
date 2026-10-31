@@ -3,7 +3,7 @@
 const LIBRARY_KEY = "fitness_workout_library";
 const LIBRARY_BACKUP_KEY = "fitness_workout_library_backup_v1";
 const ACTIVE_KEY = "fitness_active_programme";
-const PROGRAMME_SCHEMA_VERSION = 3;
+const PROGRAMME_SCHEMA_VERSION = 4;
 const DEFAULT_PROGRAMME_WEEKS = 8;
 
 function createId() {
@@ -19,33 +19,12 @@ function getExerciseTrackingId(exercise) {
 }
 
 function isExerciseStarred(programme, exercise) {
-  // Read the original per-exercise flag as a compatibility fallback until the
-  // programme is migrated and saved with programme-level starred IDs.
-  if (exercise?.starred === true) return true;
-  const ids = new Set(Array.isArray(programme?.starredExerciseIds)
-    ? programme.starredExerciseIds.map(String)
-    : []);
-  const aliases = [exercise?.trackingId, exercise?.id]
-    .filter(Boolean)
-    .map(String);
-  return aliases.some(id => ids.has(id));
+  return exercise?.starred === true;
 }
 
 function setExerciseStarred(programme, exercise, starred) {
-  const id = getExerciseTrackingId(exercise);
-  if (!programme || !id) return;
-  const ids = new Set(Array.isArray(programme.starredExerciseIds)
-    ? programme.starredExerciseIds.map(String)
-    : []);
-  if (starred) {
-    ids.add(id);
-  } else {
-    [exercise?.trackingId, exercise?.id]
-      .filter(Boolean)
-      .map(String)
-      .forEach(alias => ids.delete(alias));
-  }
-  programme.starredExerciseIds = [...ids];
+  if (!exercise) return;
+  exercise.starred = Boolean(starred);
 }
 
 function formatSpotTitle(value) {
@@ -214,9 +193,10 @@ function migrateProgramme(programme) {
   // The same exercise copied across programme weeks keeps the same id.
   // A slot is scoped to its training day, so an identically named exercise
   // in another day remains a separate progression line.
+  const savedStarIds = new Set(Array.isArray(programme.starredExerciseIds)
+    ? programme.starredExerciseIds.map(String)
+    : []);
   const exerciseIdBySlot = new Map();
-  const canonicalIdByAlias = new Map();
-  const legacyStarredIds = new Set();
   weeks = weeks.map(week => ({
     ...week,
     trainingDays: (week.trainingDays || []).map((day, dayIndex) => {
@@ -225,8 +205,6 @@ function migrateProgramme(programme) {
       return {
         ...day,
         exercises: (day.exercises || []).map(exercise => {
-          const { starred: legacyStarred, ...cleanExercise } = exercise;
-          if (Object.prototype.hasOwnProperty.call(exercise, "starred")) changed = true;
           const nameKey = String(exercise.name || "exercise").trim().toLowerCase();
           const occurrence = (occurrences.get(nameKey) || 0) + 1;
           occurrences.set(nameKey, occurrence);
@@ -236,14 +214,14 @@ function migrateProgramme(programme) {
           // existing trackingId.
           const sharedId = exerciseIdBySlot.get(slotKey) || exercise.trackingId || exercise.id || createId();
           if (!exerciseIdBySlot.has(slotKey)) exerciseIdBySlot.set(slotKey, sharedId);
-          [exercise.id, exercise.trackingId, sharedId]
-            .filter(Boolean)
-            .forEach(alias => canonicalIdByAlias.set(String(alias), String(sharedId)));
-          if (legacyStarred) legacyStarredIds.add(String(sharedId));
-          if (exercise.id !== sharedId || exercise.trackingId !== sharedId) changed = true;
-          return cleanExercise.id === sharedId && cleanExercise.trackingId === sharedId
-            ? cleanExercise
-            : { ...cleanExercise, id: sharedId, trackingId: sharedId };
+          const starred = exercise.starred === true ||
+            [exercise.id, exercise.trackingId, sharedId]
+              .filter(Boolean)
+              .map(String)
+              .some(id => savedStarIds.has(id));
+          if (exercise.id !== sharedId || exercise.trackingId !== sharedId ||
+              exercise.starred !== starred) changed = true;
+          return { ...exercise, id: sharedId, trackingId: sharedId, starred };
         })
       };
     })
@@ -256,26 +234,13 @@ function migrateProgramme(programme) {
 
   if (currentWeek !== requestedCurrentWeek) changed = true;
 
-  const requestedStarredIds = Array.isArray(programme.starredExerciseIds)
-    ? programme.starredExerciseIds.map(id =>
-        canonicalIdByAlias.get(String(id)) || String(id)
-      )
-    : [];
-  // Never silently discard a saved star during migration. Keeping older aliases
-  // lets existing programmes survive ID changes and backup restores.
-  const starredExerciseIds = [...new Set([
-    ...requestedStarredIds,
-    ...legacyStarredIds
-  ])];
-  if (JSON.stringify(starredExerciseIds) !== JSON.stringify(requestedStarredIds)) changed = true;
-
   const migrated = {
     ...programme,
     schemaVersion: PROGRAMME_SCHEMA_VERSION,
     durationWeeks,
     currentWeek,
     weeks,
-    starredExerciseIds
+    starredExerciseIds: []
   };
 
   // Temporary compatibility bridge for the existing editor and workout page.
