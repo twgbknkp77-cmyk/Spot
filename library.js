@@ -1242,7 +1242,7 @@ function createCompletedWeekCard(programme, week, history) {
   const stats = completedWeekSummary(programme, week, history);
   const card = document.createElement("section");
   card.className = "card workouts-week-complete";
-  card.innerHTML = `<header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${week.number}</small><h2>Week Complete</h2></div></header><div class="workouts-week-statistics"><span><strong>${stats.minutes}</strong><small>Minutes</small></span><span><strong>${stats.volume.toLocaleString()}</strong><small>Volume kg</small></span></div>`;
+  card.innerHTML = `<header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${week.number}</small><h2>Week Complete</h2></div></header><div class="workouts-week-statistics"><span><strong>${stats.workouts}/${stats.planned}</strong><small>Workouts</small></span><span><strong>${stats.minutes}</strong><small>Minutes</small></span><span><strong>${stats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${stats.sets}</strong><small>Sets</small></span><span><strong>${stats.effort ? stats.effort.toFixed(1) : "—"}</strong><small>Avg effort</small></span></div>`;
   return card;
 }
 
