@@ -84,7 +84,7 @@ function restartProgramme(id) {
       id: createId(),
       exercises: (workout.exercises || []).map(exercise => ({
         ...exercise,
-        id: createId()
+        trackingId: exercise.trackingId || exercise.id
       }))
     }))
   }));
@@ -1248,7 +1248,7 @@ function createCompletedWeekCard(programme, week, history) {
   const stats = completedWeekSummary(programme, week, history);
   const previousWeek = programme.weeks?.[Number(week.number) - 2];
   const previous = previousWeek ? completedWeekSummary(programme, previousWeek, history) : null;
-  let insight = "Your first completed week is now recorded.";
+  let insight = "";
   if (previous?.volume > 0) {
     const change = Math.round(((stats.volume - previous.volume) / previous.volume) * 100);
     insight = change > 0 ? `Training volume increased by ${change}% from Week ${previousWeek.number}.`
@@ -1257,7 +1257,7 @@ function createCompletedWeekCard(programme, week, history) {
   }
   const card = document.createElement("section");
   card.className = "card workouts-week-complete";
-  card.innerHTML = `<header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${week.number}</small><h2>Week Complete</h2><p>Excellent work — every workout is complete.</p></div></header><div class="workouts-week-statistics"><span><strong>${stats.workouts}/${stats.planned}</strong><small>Workouts</small></span><span><strong>${stats.minutes}</strong><small>Minutes</small></span><span><strong>${stats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${stats.sets}</strong><small>Sets</small></span><span><strong>${stats.effort ? stats.effort.toFixed(1) : "—"}</strong><small>Avg effort</small></span></div><p class="week-complete-insight">${insight}</p>`;
+  card.innerHTML = `<header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${week.number}</small><h2>Week Complete</h2><p>Excellent work — every workout is complete.</p></div></header><div class="workouts-week-statistics"><span><strong>${stats.workouts}/${stats.planned}</strong><small>Workouts</small></span><span><strong>${stats.minutes}</strong><small>Minutes</small></span><span><strong>${stats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${stats.sets}</strong><small>Sets</small></span><span><strong>${stats.effort ? stats.effort.toFixed(1) : "—"}</strong><small>Avg effort</small></span></div>${insight?`<p class="week-complete-insight">${insight}</p>`:""}`;
   return card;
 }
 
@@ -1511,6 +1511,20 @@ document.getElementById("createProgramme")
 // INITIALISE
 renderLibrary();
 renderActiveWorkout();
+
+// Opening Workouts from the bottom navigation always returns to the active
+// programme's current week. Browsing another week remains available until the
+// user leaves the Workouts tab.
+document.getElementById("workoutsButton")?.addEventListener("click", () => {
+  const programme = getProgrammes().find(
+    item => item.id === getActiveProgrammeId()
+  );
+  if (!programme) return;
+  viewedWorkoutProgrammeId = programme.id;
+  viewedWorkoutWeek = programme.currentWeek || 1;
+  expandedWorkoutId = null;
+  renderActiveWorkout();
+});
 
 
 // OPEN PROGRAMME EDITOR

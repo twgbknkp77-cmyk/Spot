@@ -18,12 +18,10 @@ function isExerciseStarred(programme, exercise) {
   if (exercise?.starred) return true;
   const wantedTrackingId = String(exercise?.trackingId || "");
   const wantedId = String(exercise?.id || "");
-  const wantedName = String(exercise?.name || "").trim().toLowerCase();
   return (programme?.weeks || []).some(week => (week.trainingDays || []).some(day =>
     (day.exercises || []).some(candidate => Boolean(candidate.starred) && (
       (wantedTrackingId && String(candidate.trackingId || "") === wantedTrackingId) ||
-      (wantedId && String(candidate.id || "") === wantedId) ||
-      String(candidate.name || "").trim().toLowerCase() === wantedName
+      (wantedId && String(candidate.id || "") === wantedId)
     ))
   ));
 }
@@ -191,10 +189,10 @@ function migrateProgramme(programme) {
     changed = true;
   }
 
-  // Give equivalent exercises in each programme week one permanent identity.
-  // This survives the week-copy process even though each weekly exercise has
-  // its own editable record and ordinary id.
-  const trackingBySlot = new Map();
+  // The same exercise copied across programme weeks keeps the same id.
+  // A slot is scoped to its training day, so an identically named exercise
+  // in another day remains a separate progression line.
+  const exerciseIdBySlot = new Map();
   weeks = weeks.map(week => ({
     ...week,
     trainingDays: (week.trainingDays || []).map((day, dayIndex) => {
@@ -207,10 +205,12 @@ function migrateProgramme(programme) {
           const occurrence = (occurrences.get(nameKey) || 0) + 1;
           occurrences.set(nameKey, occurrence);
           const slotKey = `${dayKey}::${nameKey}::${occurrence}`;
-          const trackingId = exercise.trackingId || trackingBySlot.get(slotKey) || createId();
-          if (!trackingBySlot.has(slotKey)) trackingBySlot.set(slotKey, trackingId);
-          if (!exercise.trackingId) changed = true;
-          return exercise.trackingId === trackingId ? exercise : { ...exercise, trackingId };
+          const sharedId = exerciseIdBySlot.get(slotKey) || exercise.id || exercise.trackingId || createId();
+          if (!exerciseIdBySlot.has(slotKey)) exerciseIdBySlot.set(slotKey, sharedId);
+          if (exercise.id !== sharedId || exercise.trackingId !== sharedId) changed = true;
+          return exercise.id === sharedId && exercise.trackingId === sharedId
+            ? exercise
+            : { ...exercise, id: sharedId, trackingId: sharedId };
         })
       };
     })

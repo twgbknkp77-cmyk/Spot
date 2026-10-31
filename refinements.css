@@ -155,9 +155,11 @@ input[readonly],textarea[readonly] { caret-color:transparent;pointer-events:none
 .performance-summary-row strong { font-size:13px; }
 .performance-best small { display:flex;align-items:center;justify-content:center;gap:3px; }
 .performance-best small svg { width:12px;height:12px;color:#ffd36c;fill:none;stroke:currentColor;stroke-width:2; }
-.performance-type-switch { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px;padding:5px;background:#1c1c1c;border:1px solid #393939;border-radius:15px; }
-.performance-type-switch button { min-height:42px;margin:0;background:transparent;border:0;border-radius:11px; }
-.performance-type-switch button.active { color:#111;background:var(--orange);font-weight:900; }
+.performance-type-switch { position:relative;display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0 0 16px;padding:5px;background:#1c1c1c;border:1px solid #393939;border-radius:15px;overflow:hidden; }
+.performance-type-switch::before { content:"";position:absolute;z-index:0;top:5px;bottom:5px;left:5px;width:calc((100% - 10px) / 2);border-radius:11px;background:var(--orange);transition:transform 180ms cubic-bezier(.2,.8,.2,1); }
+.performance-type-switch.is-cardio::before { transform:translateX(100%); }
+.performance-type-switch button { position:relative;z-index:1;min-height:42px;margin:0;background:transparent !important;border:0;border-radius:11px; }
+.performance-type-switch button.active { color:#111;font-weight:900; }
 
 /* Workout names, notes and completion motion */
 .session-exercise-title { min-height:30px;margin-bottom:10px; }
@@ -309,9 +311,8 @@ body.session-active #workoutSession .session-action-bar .primary-button { displa
 .week-complete-summary > div strong { font-size:17px; }
 .week-complete-summary > div small { color:var(--grey);font-size:10px;text-transform:uppercase; }
 .dashboard-status-card:has(#dashboardNextLabel) .next-workout-copy span { transition:color 180ms ease; }
-.performance-type-switch { position:relative;overflow:hidden; }
 .performance-type-switch button,.performance-tabs button { transition:background 180ms ease,color 180ms ease,border-color 180ms ease,transform 180ms ease !important; }
-.performance-type-switch button.active,.performance-tabs button.active { transform:translateY(-1px); }
+.performance-tabs button.active { transform:translateY(-1px); }
 
 @media (max-width:430px) {
   .week-complete-summary > div { grid-template-columns:repeat(2,1fr); }
@@ -462,6 +463,19 @@ body.session-active #workoutSession .session-action-bar .primary-button { displa
 .dashboard-status-card.is-week-complete .next-workout-copy { cursor:pointer; }
 .dashboard-status-card.is-week-complete #dashboardNextLabel { color:var(--orange);font-weight:900; }
 .dashboard-status-card.is-week-complete #nextWorkoutName { max-width:34ch;line-height:1.35; }
+.dashboard-week-complete { display:grid;gap:18px; }
+.dashboard-week-complete[hidden] { display:none; }
+.dashboard-week-complete header { display:flex;align-items:center;gap:14px; }
+.dashboard-week-complete header h2,.dashboard-week-complete header p,.dashboard-week-complete header small { margin:0; }
+.dashboard-week-complete header small { color:var(--orange);font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em; }
+.dashboard-week-complete header h2 { margin-top:2px;font-size:24px; }
+.dashboard-week-complete header p { margin-top:3px;color:var(--grey);font-size:14px; }
+.dashboard-week-complete-check { display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;color:#111;background:var(--orange);border-radius:50%;box-shadow:0 0 0 7px rgba(255,140,0,.1); }
+.dashboard-week-complete-check svg { width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round; }
+.dashboard-week-complete-stats { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px; }
+.dashboard-week-complete-stats span { display:grid;gap:3px;padding:12px 5px;text-align:center;background:#171717;border:1px solid #393939;border-radius:12px; }
+.dashboard-week-complete-stats strong { font-size:17px; }
+.dashboard-week-complete-stats small { color:var(--grey);font-size:9px;text-transform:uppercase;letter-spacing:.03em; }
 
 .workouts-week-complete { border-color:rgba(255,140,0,.42) !important;background:linear-gradient(145deg,rgba(255,140,0,.09),var(--card) 55%); }
 .workouts-week-complete header { display:flex;align-items:center;gap:13px;margin-bottom:18px; }
@@ -492,6 +506,7 @@ body.session-active #workoutSession .session-action-bar .primary-button { displa
   .workouts-week-statistics span:last-child { grid-column:1 / -1; }
   .week-complete-summary > div { grid-template-columns:repeat(2,1fr); }
   .week-complete-summary > div span:last-child { grid-column:1 / -1; }
+  .dashboard-week-complete-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
 /* Final interaction refinements. */

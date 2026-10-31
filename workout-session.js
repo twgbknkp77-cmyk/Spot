@@ -24,13 +24,26 @@ function updateWorkoutCommentIndicator() {
 
 function sessionExerciseIsStarred(exercise) {
   if (exercise.starred) return true;
-  const wantedId=String(exercise.id||"");
+  const wantedId=String(exercise.trackingId||exercise.id||"");
   const wantedName=String(exercise.name||"").trim().toLowerCase();
   const programmes=getProgrammes();
   const matchingProgramme=programmes.find(programme=>programme.id===currentSession?.programmeId);
   if(matchingProgramme&&typeof isExerciseStarred==="function")return isExerciseStarred(matchingProgramme,exercise);
   const candidates=matchingProgramme?[matchingProgramme]:programmes;
-  return candidates.some(programme=>(programme.weeks||[]).some(week=>(week.trainingDays||[]).some(day=>(day.exercises||[]).some(item=>item.starred&&((wantedId&&String(item.id||"")===wantedId)||String(item.name||"").trim().toLowerCase()===wantedName)))));
+  return candidates.some(programme => (programme.weeks || []).some(week =>
+    (week.trainingDays || []).some(day => {
+      const sameWorkout =
+        (currentSession?.workoutId && day.id === currentSession.workoutId) ||
+        String(day.name || "").trim().toLowerCase() ===
+          String(currentSession?.workoutName || "").trim().toLowerCase();
+      return sameWorkout && (day.exercises || []).some(item =>
+        item.starred && (
+          (wantedId && String(item.trackingId || item.id || "") === wantedId) ||
+          String(item.name || "").trim().toLowerCase() === wantedName
+        )
+      );
+    })
+  ));
 }
 
 function animateSessionCard(card, collapsing, done) {
@@ -505,18 +518,6 @@ function renderWorkoutSessionLegacy() {
 
   currentSession.exercises.forEach(exercise => {
     exercise.starred=sessionExerciseIsStarred(exercise);
-    if (!exercise.starred) {
-      const wantedName = String(exercise.name || "").trim().toLowerCase();
-      exercise.starred = getProgrammes().some(programme =>
-        (programme.weeks || []).some(week =>
-          (week.trainingDays || []).some(day =>
-            (day.exercises || []).some(item =>
-              item.starred && String(item.name || "").trim().toLowerCase() === wantedName
-            )
-          )
-        )
-      );
-    }
     const card = document.createElement("div");
     card.className = "card session-exercise-card";
     card.classList.toggle("exercise-is-complete", Boolean(exercise.completed));

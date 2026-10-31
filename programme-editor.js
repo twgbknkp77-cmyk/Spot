@@ -43,7 +43,7 @@ function cloneTrainingDays(trainingDays) {
     id: createId(),
     exercises: (workout.exercises || []).map(exercise => ({
       ...exercise,
-      id: createId()
+      trackingId: exercise.trackingId || exercise.id
     }))
   }));
 }
@@ -598,7 +598,12 @@ document.getElementById("exerciseForm")?.addEventListener("submit", async event 
   if (exerciseDialogContext.exercise) {
     Object.assign(exerciseDialogContext.exercise, values);
   } else {
-    exerciseDialogContext.workout.exercises.push({ id: createId(), trackingId: createId(), ...values });
+    const exerciseId = createId();
+    exerciseDialogContext.workout.exercises.push({
+      id: exerciseId,
+      trackingId: exerciseId,
+      ...values
+    });
   }
 
   const { programme, week } = exerciseDialogContext;

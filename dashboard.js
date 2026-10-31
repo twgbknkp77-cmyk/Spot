@@ -344,7 +344,9 @@ function dashboardFinishedWeekFromHistory(programme) {
     const minutes=sessions.reduce((sum,session)=>{const start=new Date(session.startedAt).getTime(),finish=new Date(session.finishedAt).getTime();return sum+(Number.isFinite(start)&&Number.isFinite(finish)?Math.max(0,Math.round((finish-start)/60000)):0)},0);
     const sets=sessions.reduce((sum,session)=>sum+(session.exercises||[]).reduce((total,exercise)=>total+(exercise.sets||[]).filter(set=>set.completed||(set.weight!==""&&set.reps!=="")).length,0),0);
     const volume=Math.round(sessions.reduce((sum,session)=>sum+(session.exercises||[]).reduce((exerciseTotal,exercise)=>exerciseTotal+(exercise.sets||[]).reduce((setTotal,set)=>setTotal+((Number(set.weight)||0)*(Number(set.reps)||0)),0),0),0));
-    return{programmeId:programme.id,weekNumber:week.number,workouts:completedIds.size,planned:planned.length,minutes,sets,volume};
+    const efforts=sessions.flatMap(session=>(session.exercises||[]).map(exercise=>Number(exercise.effort)).filter(Boolean));
+    const effort=efforts.length?efforts.reduce((sum,value)=>sum+value,0)/efforts.length:0;
+    return{programmeId:programme.id,weekNumber:week.number,workouts:completedIds.size,planned:planned.length,minutes,sets,volume,effort};
   }
   return null;
 }
@@ -367,6 +369,9 @@ function updateWorkoutSummary() {
     );
   const nextLabel=document.getElementById("dashboardNextLabel");
   const statusCard=nextName?.closest(".dashboard-status-card");
+  const completePanel=document.getElementById("dashboardWeekComplete");
+  const normalParts=statusCard?.querySelectorAll(".weekly-progress-heading,.weekly-progress-track,.dashboard-next-row")||[];
+  const showCompletedPanel=show=>{normalParts.forEach(part=>part.hidden=show);if(completePanel)completePanel.hidden=!show};
 
   if (
     !nextName ||
@@ -384,6 +389,7 @@ function updateWorkoutSummary() {
   );
 
   if (!programme) {
+    showCompletedPanel(false);
     statusCard?.classList.remove("is-week-complete");
     if(nextLabel)nextLabel.textContent="Next Up";
     nextName.textContent =
@@ -408,14 +414,22 @@ function updateWorkoutSummary() {
   if(!finishedWeek)finishedWeek=derivedFinishedWeek;
   else if(derivedFinishedWeek&&Number(derivedFinishedWeek.weekNumber)===Number(finishedWeek.weekNumber))finishedWeek={...derivedFinishedWeek,...finishedWeek,volume:finishedWeek.volume??derivedFinishedWeek.volume};
   if(finishedWeek&&finishedWeek.programmeId===programme.id){
+    showCompletedPanel(true);
     statusCard?.classList.add("is-week-complete");
     if(nextLabel)nextLabel.textContent=`Week ${finishedWeek.weekNumber} Complete`;
     nextName.textContent=`Excellent work — every workout is complete. ${finishedWeek.minutes||0} min · ${(finishedWeek.volume||0).toLocaleString()} kg volume`;
     progressCount.textContent=`${finishedWeek.workouts||finishedWeek.planned||0}/${finishedWeek.planned||finishedWeek.workouts||0}`;
     progressFill.classList.add("progress-fill-animate");progressFill.style.width="100%";
     dashboardNextWorkoutId=null;dashboardNextDestination="workouts";dashboardStartWorkout.hidden=true;
+    const setText=(id,value)=>{const element=document.getElementById(id);if(element)element.textContent=value};
+    setText("dashboardCompleteWeekLabel",`Week ${finishedWeek.weekNumber}`);
+    setText("dashboardCompleteWorkouts",`${finishedWeek.workouts||finishedWeek.planned||0}/${finishedWeek.planned||finishedWeek.workouts||0}`);
+    setText("dashboardCompleteMinutes",String(finishedWeek.minutes||0));
+    setText("dashboardCompleteVolume",(finishedWeek.volume||0).toLocaleString());
+    setText("dashboardCompleteEffort",finishedWeek.effort?Number(finishedWeek.effort).toFixed(1):"—");
     return;
   }
+  showCompletedPanel(false);
   statusCard?.classList.remove("is-week-complete");
   if(nextLabel)nextLabel.textContent="Next Up";
 
@@ -687,7 +701,7 @@ function drawExerciseProgressChart() {
       if(definition?.workoutName&&normaliseProgressName(session.workoutName)!==normaliseProgressName(definition.workoutName))return[];
       const exercise = (session.exercises || []).find(item =>
         (definition?.trackingId&&item.trackingId===definition.trackingId) ||
-        (!item.trackingId&&normaliseProgressName(item.name)===normaliseProgressName(definition?.exerciseName))
+        normaliseProgressName(item.name)===normaliseProgressName(definition?.exerciseName)
       );
       const value = exercise ? progressValue(exercise, metric) : 0;
       return value > 0 ? [{ value, date: session.finishedAt }] : [];
@@ -714,7 +728,7 @@ function drawExerciseProgressChart() {
     const first=new Date(minDate).toLocaleDateString("en-GB",{day:"numeric",month:"short"}),last=new Date(maxDate).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
     const unit=display==="growth"?"GROWTH %":metric==="weight"?"KG":metric==="effort"?"EFFORT":"REPS";
     const axisCentre=top+(height-top-bottom)/2;
-    container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${unit} progress over time"><g>${yTicks}</g><line class="progress-axis" x1="${left}" y1="${top}" x2="${left}" y2="${height-bottom}"></line><line class="progress-axis" x1="${left}" y1="${height-bottom}" x2="${width-right}" y2="${height-bottom}"></line><g class="progress-series">${lines}</g><text class="axis-label" x="${left}" y="${height-9}">${first}</text><text class="axis-label" text-anchor="end" x="${width-right}" y="${height-9}">${last}</text><text class="axis-title" text-anchor="middle" transform="rotate(-90 11 ${axisCentre})" x="11" y="${axisCentre}">${unit}</text></svg>`;
+    container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${unit} progress over time"><g>${yTicks}</g><g class="progress-series">${lines}</g><text class="axis-label" x="${left}" y="${height-9}">${first}</text><text class="axis-label" text-anchor="end" x="${width-right}" y="${height-9}">${last}</text><text class="axis-title" text-anchor="middle" transform="rotate(-90 11 ${axisCentre})" x="11" y="${axisCentre}">${unit}</text></svg>`;
   }
   legend.innerHTML="";
   names.forEach((name,index)=>{const button=document.createElement("button");button.type="button";button.className="progress-legend-item";button.classList.toggle("is-hidden",progressHiddenExercises.has(normaliseProgressName(name)));button.innerHTML=`<span style="background:${progressLineColours[index%progressLineColours.length]}"></span>${name}`;button.onclick=()=>{const key=normaliseProgressName(name);progressHiddenExercises.has(key)?progressHiddenExercises.delete(key):progressHiddenExercises.add(key);saveProgressGraphFilters();drawExerciseProgressChart()};legend.appendChild(button)});
