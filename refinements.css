@@ -702,8 +702,13 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   }
 }
 
-/* Programme overview is deliberately view-only; editing starts from a day. */
-.programme-overview-header { grid-template-columns:48px minmax(0,1fr) !important; }
+/* Programme overview leads directly into editing without another edit step. */
+.programme-overview-header { grid-template-columns:48px minmax(0,1fr) auto !important; }
+
+/* Editor week navigation mirrors the scrollable Programme Overview tabs. */
+#programmeEditor .editor-week-selector { margin:0;scroll-padding-inline:14px; }
+#programmeEditor .editor-week-selector button { flex:0 0 auto;min-width:84px; }
+#programmeEditor.editor-readonly .editor-week-selector { display:none !important; }
 
 .workout-detail-completed {
   display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:8px 12px;
@@ -717,6 +722,29 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   .workout-detail-completed span { display:none; }
   .workout-detail-completed { width:44px;padding:8px;justify-content:center; }
 }
+
+/* Matching, informative graph placeholders retain the dashboard layout. */
+.chart-empty-graph { position:relative;display:grid;min-height:190px;place-items:center;overflow:hidden; }
+.chart-empty-graph svg { position:absolute;inset:0;width:100%;height:100%;opacity:.42; }
+.chart-empty-graph line { stroke:#3b3b3b;stroke-width:1; }
+.chart-empty-graph p { position:relative;z-index:1;max-width:250px;margin:0;padding:12px 16px;text-align:center;color:var(--grey);background:rgba(21,21,21,.86);border-radius:12px; }
+
+/* Keep installed iPhone content below the translucent status area. */
+main { padding-top:max(24px,calc(env(safe-area-inset-top) + 18px)); }
+.page-header { position:relative;z-index:3;opacity:1; }
+.page-header > .icon-button,.page-header > button { opacity:1; }
+
+/* Primary navigation page titles share one exact typographic treatment. */
+#dashboard > .page-header > h1,
+#workouts > .page-header > h1,
+#library > .page-header > h1,
+#profile > .page-header > h1 {
+  margin:0;font-size:clamp(32px,8vw,42px);line-height:1.08;font-weight:800;letter-spacing:-.025em;
+}
+
+/* Empty cards give one useful next step without visual clutter. */
+.empty-state-card { min-height:96px;display:grid;place-items:center;text-align:center; }
+.empty-state-card p { max-width:330px;margin:0;line-height:1.45; }
 
 /* Exercise rows remain visibly separate in both editor modes. */
 #programmeEditor .editor-exercise-list { display:grid !important;gap:12px !important; }

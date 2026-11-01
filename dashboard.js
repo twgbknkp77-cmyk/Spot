@@ -698,7 +698,7 @@ function drawExerciseProgressChart() {
   if (title) title.textContent = "Exercise Progress";
   const summary=document.getElementById("exerciseProgressFilterSummary");
   if(summary) summary.textContent=`${metric === "weight" ? "Weight" : metric === "reps" ? "Repetitions" : "Effort"} · ${display === "growth" ? "Growth %" : "Actual Values"} · ${visibleNames.length === names.length ? "All Exercises" : `${visibleNames.length} Selected`}`;
-  if (!names.length) { container.innerHTML = '<p class="chart-empty-state">No exercise progress to display.</p>'; legend.innerHTML = ""; return; }
+  if (!names.length) { container.innerHTML = emptyDashboardGraph("Star an exercise and complete a workout to see your progress."); legend.innerHTML = ""; return; }
 
   let history = [];
   try { history = JSON.parse(localStorage.getItem("fitness_workout_history") || "[]"); } catch {}
@@ -737,7 +737,7 @@ function drawExerciseProgressChart() {
     });
   }
   const allPoints = series.flatMap(item => item.points);
-  if (!allPoints.length) { container.innerHTML = '<p class="chart-empty-state">No recorded results for this view.</p>'; }
+  if (!allPoints.length) { container.innerHTML = emptyDashboardGraph("Complete a starred exercise to add its first result."); }
   else {
     const width=340,height=220,left=48,right=14,top=14,bottom=38;
     const dates=allPoints.map(p=>new Date(p.date).getTime()), minDate=Math.min(...dates), maxDate=Math.max(...dates);
@@ -792,6 +792,10 @@ function formatGraphDate(timestamp) {
     );
 }
 
+function emptyDashboardGraph(message) {
+  return `<div class="chart-empty-graph"><svg viewBox="0 0 340 190" aria-hidden="true"><line x1="42" y1="35" x2="326" y2="35"></line><line x1="42" y1="82" x2="326" y2="82"></line><line x1="42" y1="129" x2="326" y2="129"></line><line x1="42" y1="166" x2="326" y2="166"></line></svg><p>${message}</p></div>`;
+}
+
 
 // DRAW WEIGHT GRAPH
 function drawWeightChart() {
@@ -824,10 +828,9 @@ function drawWeightChart() {
       entry.chartTime <= now
     );
 
-  // Keep an empty graph from taking up a large blank area on phones.
   if (weights.length === 0) {
-    container.hidden = true;
-    container.innerHTML = "";
+    container.hidden = false;
+    container.innerHTML = emptyDashboardGraph("Add a bodyweight measurement to see your trend.");
     return;
   }
 

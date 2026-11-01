@@ -55,8 +55,13 @@ function renderProgrammeOverview() {
   if(overviewWeekNumber===programme.currentWeek&&remaining.length){appendGroup("Next Up",remaining.slice(0,1));appendGroup("Upcoming",remaining.slice(1));}
   else appendGroup("Upcoming",remaining);
   appendGroup("Completed",completed);
-  if(!list.children.length) list.innerHTML="<div class='card empty-state-card'><p>No training days in this week.</p></div>";
+  if(!list.children.length) list.innerHTML="<div class='card empty-state-card'><p>No training days yet. Use Edit to add one.</p></div>";
   container.appendChild(list);
 }
 
 document.getElementById("programmeOverviewBack")?.addEventListener("click",()=>showPage("library"));
+document.getElementById("programmeOverviewEdit")?.addEventListener("click",()=>{
+  if (overviewProgrammeId && typeof openProgrammeEditorInEditMode === "function") {
+    openProgrammeEditorInEditMode(overviewProgrammeId);
+  }
+});

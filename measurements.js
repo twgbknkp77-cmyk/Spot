@@ -71,7 +71,7 @@ function renderMeasurements() {
   if (weights.length === 0) {
     container.innerHTML = `
       <div class="card empty-state-card">
-        <p>No bodyweight measurements saved yet.</p>
+        <p>Add a bodyweight measurement from Dashboard to begin your trend.</p>
       </div>
     `;
     return;

@@ -322,31 +322,34 @@ function renderProgrammeEditor() {
   nameCard.append(nameField, durationField);
   header.appendChild(nameCard);
 
-  const weekCard = document.createElement("div");
-  weekCard.className = "card editor-week-card";
-  const weekLabel = document.createElement("label");
-  weekLabel.htmlFor = "editorWeekSelect";
-  weekLabel.textContent = "Editing";
-  const weekSelect = document.createElement("select");
-  weekSelect.id = "editorWeekSelect";
+  const weekTabs = document.createElement("div");
+  weekTabs.className = "overview-week-selector editor-week-selector";
+  weekTabs.setAttribute("aria-label", "Choose week to edit");
   programme.weeks.forEach(optionWeek => {
-    const option = document.createElement("option");
-    option.value = optionWeek.number;
-    option.textContent = `Week ${optionWeek.number}`;
-    option.selected = optionWeek.number === editingWeekNumber;
-    weekSelect.appendChild(option);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = `Week ${optionWeek.number}`;
+    button.classList.toggle("active", optionWeek.number === editingWeekNumber);
+    if (optionWeek.number === editingWeekNumber) button.dataset.selectedWeek = "true";
+    button.addEventListener("click", () => {
+      editingWeekNumber = optionWeek.number;
+      renderProgrammeEditor();
+    });
+    weekTabs.appendChild(button);
   });
-  weekSelect.addEventListener("change", () => {
-    editingWeekNumber = Number(weekSelect.value);
-    renderProgrammeEditor();
+  container.appendChild(weekTabs);
+  requestAnimationFrame(() => {
+    weekTabs.querySelector("[data-selected-week='true']")?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest"
+    });
   });
-  weekCard.append(weekLabel, weekSelect);
-  container.appendChild(weekCard);
 
   if (week.trainingDays.length === 0) {
     const empty = document.createElement("div");
     empty.className = "card empty-state-card";
-    empty.textContent = "No training days have been added to this week.";
+    empty.textContent = "No training days yet. Use Add Training Day below to begin.";
     container.appendChild(empty);
   }
 
@@ -483,8 +486,17 @@ function renderProgrammeEditor() {
   const readOnly = !programme.isDraft && !editorIsEditing;
   [...header.querySelectorAll("input, button"), ...container.querySelectorAll("input, button")]
     .forEach(control => { control.disabled = readOnly && !control.classList.contains("editor-expand-day"); });
-  weekSelect.disabled = false;
   if (preserveScroll) requestAnimationFrame(() => window.scrollTo(0, previousScroll));
+}
+
+function openProgrammeEditorInEditMode(id) {
+  window.editingProgrammeId = id;
+  prepareProgrammeEditor(id);
+  const programme = getEditingProgramme();
+  if (!programme) return;
+  editorIsEditing = true;
+  showPage("programmeEditor");
+  renderProgrammeEditor();
 }
 
 function switchProgrammeEditorMode() {

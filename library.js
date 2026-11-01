@@ -1114,7 +1114,7 @@ function renderLibrary() {
   container.innerHTML = "";
 
   if (programmes.length === 0) {
-    container.innerHTML = "<div class='card empty-state-card'><p>No programmes saved yet.</p></div>";
+    container.innerHTML = "<div class='card empty-state-card'><p>Create your first programme with the + button above.</p></div>";
     return;
   }
 
@@ -1254,6 +1254,8 @@ function createCompletedWeekCard(programme, week, history) {
 function renderActiveWorkout() {
   const container = document.getElementById("activeWorkout");
   if (!container) return;
+  const statisticsButton = document.getElementById("openWorkoutStatistics");
+  if (statisticsButton) statisticsButton.hidden = Boolean(expandedWorkoutId);
 
   const programmes = getProgrammes();
   const activeProgrammeId = getActiveProgrammeId();
@@ -1264,7 +1266,7 @@ function renderActiveWorkout() {
   container.innerHTML = "";
 
   if (!programme) {
-    container.innerHTML = "<div class='card empty-state-card'><p>No active programme. Activate one in your Library.</p></div>";
+    container.innerHTML = "<div class='card empty-state-card'><p>Activate a programme in Library to see your next workout here.</p></div>";
     return;
   }
 
@@ -1338,6 +1340,7 @@ function renderActiveWorkout() {
         '<svg aria-hidden="true"><use href="#icon-arrow-left"></use></svg>';
       back.addEventListener("click", () => {
         expandedWorkoutId = null;
+        if (statisticsButton) statisticsButton.hidden = false;
         renderActiveWorkout();
         if (window.workoutDetailReturnPage === "programmeOverview") {
           window.workoutDetailReturnPage = null;
@@ -1413,7 +1416,7 @@ function renderActiveWorkout() {
   if (!week || (week.trainingDays || []).length === 0) {
     const empty = document.createElement("div");
     empty.className = "card empty-state-card";
-    empty.innerHTML = "<p>This week has no training days yet.</p>";
+    empty.innerHTML = "<p>No training days yet. Edit this programme to add one.</p>";
     container.appendChild(empty);
     return;
   }
