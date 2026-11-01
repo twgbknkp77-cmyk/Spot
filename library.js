@@ -1203,12 +1203,12 @@ function renderLibrary() {
 
     card.addEventListener("click", event => {
       if (event.target.closest(".programme-activation-button")) return;
-      openProgrammeEditor(programme.id);
+      openProgrammeOverview(programme.id);
     });
     card.addEventListener("keydown", event => {
       if ((event.key === "Enter" || event.key === " ") && !event.target.closest("button")) {
         event.preventDefault();
-        openProgrammeEditor(programme.id);
+        openProgrammeOverview(programme.id);
       }
     });
 
@@ -1255,9 +1255,11 @@ function renderActiveWorkout() {
   const container = document.getElementById("activeWorkout");
   if (!container) return;
 
-  const programme = getProgrammes().find(
-    item => item.id === getActiveProgrammeId()
-  );
+  const programmes = getProgrammes();
+  const activeProgrammeId = getActiveProgrammeId();
+  const programme = programmes.find(
+    item => item.id === (viewedWorkoutProgrammeId || activeProgrammeId)
+  ) || programmes.find(item => item.id === activeProgrammeId);
 
   container.innerHTML = "";
 
@@ -1266,7 +1268,7 @@ function renderActiveWorkout() {
     return;
   }
 
-  if (viewedWorkoutProgrammeId !== programme.id) {
+  if (!viewedWorkoutProgrammeId || viewedWorkoutProgrammeId !== programme.id) {
     viewedWorkoutProgrammeId = programme.id;
     viewedWorkoutWeek = programme.currentWeek || 1;
     expandedWorkoutId = null;
@@ -1377,16 +1379,32 @@ function renderActiveWorkout() {
         detail.appendChild(row);
       });
 
-      const start = document.createElement("button");
-      start.className = "primary-button workout-detail-start";
-      start.textContent = "Start Workout";
-      start.addEventListener("click", async () => {
-        if (viewedWorkoutWeek !== programme.currentWeek) {
-          changeActiveProgrammeWeek(programme.id, viewedWorkoutWeek);
-        }
-        startWorkout(workout.id);
-      });
-      detailHeader.appendChild(start);
+      const isCompleted = !remaining.some(item => item.id === workout.id);
+      const isActiveProgramme = programme.id === activeProgrammeId;
+
+      if (isCompleted) {
+        const completed = document.createElement("span");
+        completed.className = "workout-detail-completed";
+        completed.innerHTML = '<svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg><span>Completed</span>';
+        detailHeader.appendChild(completed);
+      } else if (isActiveProgramme) {
+        const start = document.createElement("button");
+        start.className = "primary-button workout-detail-start";
+        start.textContent = "Start Workout";
+        start.addEventListener("click", async () => {
+          if (viewedWorkoutWeek !== programme.currentWeek) {
+            changeActiveProgrammeWeek(programme.id, viewedWorkoutWeek);
+          }
+          startWorkout(workout.id);
+        });
+        detailHeader.appendChild(start);
+      } else {
+        const edit = document.createElement("button");
+        edit.className = "primary-button workout-detail-edit";
+        edit.textContent = "Edit";
+        edit.addEventListener("click", () => openProgrammeEditor(programme.id));
+        detailHeader.appendChild(edit);
+      }
       container.appendChild(detail);
       return;
     }

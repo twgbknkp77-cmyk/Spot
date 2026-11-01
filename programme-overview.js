@@ -50,7 +50,7 @@ function renderProgrammeOverview() {
     if(!items.length)return; const heading=document.createElement("h2"); heading.className="workout-group-heading overview-group-heading"; heading.textContent=title; list.appendChild(heading);
     items.forEach(({day,done})=>{ const card=document.createElement("div"); card.className="card overview-day-card";
       card.innerHTML=`<div><h3>${formatSpotTitle(day.name)}</h3><p>${(day.exercises||[]).length} ${(day.exercises||[]).length===1?"exercise":"exercises"}</p></div><span class="overview-status ${done?"is-done":""}">${done?'<svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg>':'<svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>'}</span>`;
-      card.onclick=()=>{ if(programme.id===getActiveProgrammeId()){ window.workoutDetailReturnPage="programmeOverview";viewedWorkoutWeek=overviewWeekNumber;expandedWorkoutId=day.id;renderActiveWorkout();showPage("workouts"); } else openProgrammeEditor(programme.id); }; list.appendChild(card); });
+      card.onclick=()=>{ window.workoutDetailReturnPage="programmeOverview";viewedWorkoutProgrammeId=programme.id;viewedWorkoutWeek=overviewWeekNumber;expandedWorkoutId=day.id;renderActiveWorkout();showPage("workouts"); }; list.appendChild(card); });
   };
   if(overviewWeekNumber===programme.currentWeek&&remaining.length){appendGroup("Next Up",remaining.slice(0,1));appendGroup("Upcoming",remaining.slice(1));}
   else appendGroup("Upcoming",remaining);
@@ -60,4 +60,3 @@ function renderProgrammeOverview() {
 }
 
 document.getElementById("programmeOverviewBack")?.addEventListener("click",()=>showPage("library"));
-document.getElementById("programmeOverviewEdit")?.addEventListener("click",()=>{if(overviewProgrammeId)openProgrammeEditor(overviewProgrammeId);});

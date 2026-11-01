@@ -657,10 +657,10 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 #programmeEditor .editor-day-header { min-height:40px; }
 #programmeEditor .editor-day-card.is-collapsed {
-  box-sizing:border-box;height:58px !important;min-height:58px !important;max-height:58px !important;
-  padding:8px 14px !important;overflow:hidden !important;
+  box-sizing:border-box;height:72px !important;min-height:72px !important;max-height:72px !important;
+  padding:13px 16px !important;overflow:hidden !important;
 }
-#programmeEditor .editor-day-card.is-collapsed .editor-day-header { min-height:40px; }
+#programmeEditor .editor-day-card.is-collapsed .editor-day-header { min-height:44px; }
 #programmeEditor .editor-day-card + .editor-day-card { margin-top:0; }
 #programmeEditor .editor-exercise-row,
 #programmeEditor:not(.editor-readonly) .editor-exercise-row {
@@ -698,8 +698,24 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   #programmeEditor #editorProgrammeHeader { margin-bottom:16px; }
   #programmeEditor #editorWorkouts { gap:16px !important; }
   #programmeEditor .editor-day-card.is-collapsed {
-    height:56px !important;min-height:56px !important;max-height:56px !important;padding:7px 13px !important;
+    height:72px !important;min-height:72px !important;max-height:72px !important;padding:13px 14px !important;
   }
+}
+
+/* Programme overview is deliberately view-only; editing starts from a day. */
+.programme-overview-header { grid-template-columns:48px minmax(0,1fr) !important; }
+
+.workout-detail-completed {
+  display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:8px 12px;
+  color:var(--orange);background:rgba(255,140,0,.08);
+  border:1px solid rgba(255,140,0,.32);border-radius:12px;font-weight:800;
+}
+.workout-detail-completed svg { width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4; }
+.workout-detail-edit { min-width:82px; }
+
+@media (max-width:430px) {
+  .workout-detail-completed span { display:none; }
+  .workout-detail-completed { width:44px;padding:8px;justify-content:center; }
 }
 
 /* Exercise rows remain visibly separate in both editor modes. */
