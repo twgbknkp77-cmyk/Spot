@@ -455,13 +455,33 @@ function createSessionExercises(programme, workout, startedTime) {
 
 
 // START A WORKOUT
-function startWorkout(workoutId) {
+function startWorkout(workoutOrId) {
   const programme = getProgrammes().find(item => item.id === getActiveProgrammeId());
   if (!programme) return;
 
+  const suppliedWorkout = workoutOrId && typeof workoutOrId === "object"
+    ? workoutOrId
+    : null;
+  const requestedWorkoutId = suppliedWorkout?.id || workoutOrId;
+  const workout = suppliedWorkout?.exercises?.length
+    ? suppliedWorkout
+    : resolveProgrammeWorkout(programme, requestedWorkoutId, suppliedWorkout?.name);
+  if (!workout) {
+    showSpotMessage("Workout unavailable", "Spot could not find this workout in the active programme.");
+    return;
+  }
+
   const savedSession = getSavedWorkoutSession();
-  if (savedSession && savedSession.workoutId === workoutId && !savedSession.exercises?.length) {
-    const recoveredWorkout = resolveProgrammeWorkout(programme, workoutId, savedSession.workoutName);
+  const savedSessionMatches = Boolean(
+    savedSession &&
+    savedSession.programmeId === programme.id &&
+    savedSession.workoutId === requestedWorkoutId &&
+    Number(savedSession.weekNumber) === Number(programme.currentWeek)
+  );
+  if (savedSessionMatches && !savedSession.exercises?.length) {
+    const recoveredWorkout = suppliedWorkout?.exercises?.length
+      ? suppliedWorkout
+      : resolveProgrammeWorkout(programme, requestedWorkoutId, savedSession.workoutName);
     const recoveredExercises = createSessionExercises(
       programme,
       recoveredWorkout,
@@ -477,8 +497,7 @@ function startWorkout(workoutId) {
     }
   }
   if (
-    savedSession &&
-    savedSession.workoutId === workoutId &&
+    savedSessionMatches &&
     Array.isArray(savedSession.exercises) &&
     savedSession.exercises.length > 0
   ) {
@@ -487,7 +506,7 @@ function startWorkout(workoutId) {
     renderWorkoutSession();
     return;
   }
-  if (savedSession && (!savedSession.exercises?.length || savedSession.workoutId === workoutId)) {
+  if (savedSession && (!savedSession.exercises?.length || savedSessionMatches)) {
     clearActiveWorkoutSession();
   }
   const week =
@@ -497,10 +516,6 @@ function startWorkout(workoutId) {
     week?.trainingDays ||
     programme.days ||
     [];
-
-  const workout = resolveProgrammeWorkout(programme, workoutId);
-
-  if (!workout) return;
 
   const startedAt = new Date().toISOString();
   const startedTime = new Date(startedAt).getTime();
@@ -514,7 +529,7 @@ function startWorkout(workoutId) {
     weekId: week?.id || null,
     weekNumber: programme.currentWeek || 1,
     scheduledWorkoutCount: trainingDays.length,
-    workoutId,
+    workoutId: requestedWorkoutId,
     workoutName: workout.name,
     workoutNote: "",
     startedAt,
@@ -531,6 +546,28 @@ function startWorkout(workoutId) {
   saveActiveWorkoutSession();
   showPage("workoutSession");
   renderWorkoutSession();
+}
+
+function recoverEmptyCurrentSession() {
+  if (!currentSession || currentSession.exercises?.length) return true;
+  const programme = getProgrammes().find(item => item.id === currentSession.programmeId);
+  if (!programme) return false;
+  const workout = resolveProgrammeWorkout(
+    programme,
+    currentSession.workoutId,
+    currentSession.workoutName
+  );
+  const exercises = createSessionExercises(
+    programme,
+    workout,
+    new Date(currentSession.startedAt || Date.now()).getTime()
+  );
+  if (!exercises.length) return false;
+  currentSession.exercises = exercises;
+  currentSession.workoutId = currentSession.workoutId || workout.id;
+  currentSession.workoutName = currentSession.workoutName || workout.name;
+  saveActiveWorkoutSession();
+  return true;
 }
 
 
@@ -892,6 +929,11 @@ function renderWorkoutSessionLegacy() {
 // COMPACT WORKOUT SESSION
 function renderWorkoutSession() {
   if (!currentSession) return;
+  if (!recoverEmptyCurrentSession()) {
+    document.getElementById("sessionExercises").innerHTML =
+      "<div class='card empty-state-card'><p>This workout has no saved exercises. Return to the programme and try again.</p></div>";
+    return;
+  }
 
   document.getElementById("sessionWorkoutName").textContent =
     formatSpotTitle(currentSession.workoutName);

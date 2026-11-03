@@ -1034,7 +1034,7 @@ function renderActiveWorkoutLegacy() {
         startButton.addEventListener(
           "click",
           () => {
-            startWorkout(workout.id);
+            startWorkout(workout);
           }
         );
 
@@ -1406,7 +1406,7 @@ function renderActiveWorkout() {
           if (viewedWorkoutWeek !== programme.currentWeek) {
             changeActiveProgrammeWeek(programme.id, viewedWorkoutWeek);
           }
-          startWorkout(workout.id);
+          startWorkout(workout);
         });
         detailHeader.appendChild(start);
       } else {
@@ -1485,7 +1485,7 @@ function renderActiveWorkout() {
       if (viewedWorkoutWeek !== programme.currentWeek) {
         changeActiveProgrammeWeek(programme.id, viewedWorkoutWeek);
       }
-      startWorkout(workout.id);
+      startWorkout(workout);
     });
 
     card.appendChild(header);
