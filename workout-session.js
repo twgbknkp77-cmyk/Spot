@@ -412,10 +412,70 @@ function createSessionSet(plannedWeight, plannedReps, plannedRepTarget = "") {
   };
 }
 
+function resolveProgrammeWorkout(programme, workoutId, workoutName = "") {
+  const days = (programme?.weeks || []).flatMap(week => week.trainingDays || []);
+  const compatibilityDays = Array.isArray(programme?.days) ? programme.days : [];
+  const allDays = [...days, ...compatibilityDays];
+  const normalise = value => String(value || "").trim().toLowerCase();
+  let workout = allDays.find(day => day.id === workoutId);
+  const resolvedName = workout?.name || workoutName;
+  if ((!workout || !(workout.exercises || []).length) && resolvedName) {
+    workout = allDays.find(day =>
+      normalise(day.name) === normalise(resolvedName) &&
+      Array.isArray(day.exercises) && day.exercises.length > 0
+    ) || workout;
+  }
+  return workout || null;
+}
+
+function createSessionExercises(programme, workout, startedTime) {
+  return (workout?.exercises || []).map(exercise => ({
+    id: exercise.id,
+    trackingId: exercise.trackingId || exercise.id,
+    starred: isExerciseStarred(programme, exercise),
+    name: exercise.name,
+    type: exercise.type || "strength",
+    note: exercise.note || "",
+    sessionNote: "",
+    effort: null,
+    completed: false,
+    collapsed: false,
+    targetSets: Number(exercise.sets) || 0,
+    targetWeight: exercise.weight,
+    targetRepLabel: getExerciseRepTarget(exercise).label,
+    previousResult: getPreviousExerciseResult(exercise, startedTime, workout.id, workout.name),
+    targetDurationMinutes: exercise.type === "cardio" ? Number(exercise.durationMinutes) || 0 : undefined,
+    durationMinutes: exercise.type === "cardio" ? "" : undefined,
+    sets: exercise.type === "cardio" ? [] : Array.from(
+      { length: Math.max(1, Number(exercise.sets) || 0) },
+      () => createSessionSet(exercise.weight, getExerciseRepTarget(exercise).min, getExerciseRepTarget(exercise).value)
+    )
+  }));
+}
+
 
 // START A WORKOUT
 function startWorkout(workoutId) {
+  const programme = getProgrammes().find(item => item.id === getActiveProgrammeId());
+  if (!programme) return;
+
   const savedSession = getSavedWorkoutSession();
+  if (savedSession && savedSession.workoutId === workoutId && !savedSession.exercises?.length) {
+    const recoveredWorkout = resolveProgrammeWorkout(programme, workoutId, savedSession.workoutName);
+    const recoveredExercises = createSessionExercises(
+      programme,
+      recoveredWorkout,
+      new Date(savedSession.startedAt || Date.now()).getTime()
+    );
+    if (recoveredExercises.length) {
+      savedSession.exercises = recoveredExercises;
+      currentSession = savedSession;
+      saveActiveWorkoutSession();
+      showPage("workoutSession");
+      renderWorkoutSession();
+      return;
+    }
+  }
   if (
     savedSession &&
     savedSession.workoutId === workoutId &&
@@ -430,12 +490,6 @@ function startWorkout(workoutId) {
   if (savedSession && (!savedSession.exercises?.length || savedSession.workoutId === workoutId)) {
     clearActiveWorkoutSession();
   }
-  const programme = getProgrammes().find(
-    item => item.id === getActiveProgrammeId()
-  );
-
-  if (!programme) return;
-
   const week =
     programme.weeks?.[programme.currentWeek - 1];
 
@@ -444,9 +498,7 @@ function startWorkout(workoutId) {
     programme.days ||
     [];
 
-  const workout = trainingDays.find(
-    item => item.id === workoutId
-  );
+  const workout = resolveProgrammeWorkout(programme, workoutId);
 
   if (!workout) return;
 
@@ -462,45 +514,19 @@ function startWorkout(workoutId) {
     weekId: week?.id || null,
     weekNumber: programme.currentWeek || 1,
     scheduledWorkoutCount: trainingDays.length,
-    workoutId: workout.id,
+    workoutId,
     workoutName: workout.name,
     workoutNote: "",
     startedAt,
 
-    exercises: (workout.exercises || []).map(exercise => ({
-      id: exercise.id,
-      trackingId: exercise.trackingId,
-      starred: isExerciseStarred(programme, exercise),
-      name: exercise.name,
-      type: exercise.type || "strength",
-      note: exercise.note || "",
-      sessionNote: "",
-      effort: null,
-      completed: false,
-      collapsed: false,
-      targetSets: Number(exercise.sets) || 0,
-      targetWeight: exercise.weight,
-      targetRepLabel: getExerciseRepTarget(exercise).label,
-      previousResult:
-        getPreviousExerciseResult(exercise, startedTime, workout.id, workout.name),
-
-      targetDurationMinutes: exercise.type === "cardio"
-        ? Number(exercise.durationMinutes) || 0
-        : undefined,
-      durationMinutes: exercise.type === "cardio"
-        ? ""
-        : undefined,
-
-      sets: exercise.type === "cardio" ? [] : Array.from(
-        { length: Number(exercise.sets) || 0 },
-        () => createSessionSet(
-          exercise.weight,
-          getExerciseRepTarget(exercise).min,
-          getExerciseRepTarget(exercise).value
-        )
-      )
-    }))
+    exercises: createSessionExercises(programme, workout, startedTime)
   };
+
+  if (!currentSession.exercises.length) {
+    showSpotMessage("Workout unavailable", "This workout has no exercises saved. Open it in the Programme Editor before starting.");
+    currentSession = null;
+    return;
+  }
 
   saveActiveWorkoutSession();
   showPage("workoutSession");
