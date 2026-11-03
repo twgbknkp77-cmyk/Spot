@@ -906,17 +906,8 @@ function renderWorkoutSession() {
       const row = document.createElement("div");
       row.className = "session-set-row";
 
-      const number = document.createElement("span");
-      number.className = "session-set-number";
-      const numberText = document.createElement("strong");
-      numberText.textContent = String(setIndex + 1);
-      number.appendChild(numberText);
-      const previousSet = exercise.previousResult?.sets?.[setIndex];
-      if (previousSet) {
-        const previousSetText = document.createElement("small");
-        previousSetText.textContent = `${Number(previousSet.weight) || 0} kg × ${Number(previousSet.reps) || 0}`;
-        number.appendChild(previousSetText);
-      }
+      const number = document.createElement("strong");
+      number.textContent = String(setIndex + 1);
 
       const weightLabel = document.createElement("label");
       const weightInput = document.createElement("input");

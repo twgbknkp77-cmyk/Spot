@@ -565,10 +565,7 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   font-size:13px !important;font-weight:700;line-height:1.35;
 }
 .previous-session-note,.previous-session-effort { margin:2px 0;color:#c7c7c7 !important;font-size:14px !important;line-height:1.45; }
-.session-set-row { grid-template-columns:72px minmax(0,1fr) minmax(0,1fr) !important; }
-.session-set-number { display:grid;gap:3px;align-content:center;min-width:0; }
-.session-set-number strong { font-size:18px; }
-.session-set-number small { color:#aaa;font-size:10px;line-height:1.15;white-space:nowrap; }
+.session-set-row { grid-template-columns:30px minmax(0,1fr) minmax(0,1fr) !important; }
 .session-exercise-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
 .session-exercise-actions .exercise-reopen-button { display:none; }
 .session-exercise-actions .session-edit-menu { display:block; }
