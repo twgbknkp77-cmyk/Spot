@@ -211,12 +211,21 @@ function renderWorkoutCompletionSummary(session, previousSession, progression) {
   const next = progression?.advanced ? `Week complete — Week ${progression.newWeek} is now ready.`
     : progression?.programmeComplete ? "Programme complete." : "Your next workout is ready when you are.";
   const weekStats=(progression?.advanced||progression?.programmeComplete)?completedWeekStatistics(session):null;
+  const xpEarned = typeof calculateSessionXp === "function"
+    ? calculateSessionXp(session, previousSession, Boolean(weekStats)) : 0;
+  const totalXp = typeof calculateTrainingXp === "function" ? calculateTrainingXp() : xpEarned;
+  const levelState = typeof trainingLevelFromXp === "function"
+    ? trainingLevelFromXp(totalXp) : { level:1, remaining:0, required:500, percentage:0 };
+  const previousLevelState = typeof trainingLevelFromXp === "function"
+    ? trainingLevelFromXp(Math.max(0,totalXp-xpEarned)) : levelState;
+  const levelUp = levelState.level > previousLevelState.level;
   container.innerHTML = `
     <div class="completion-hero"><span class="completion-check">✓</span><p>Workout Complete</p><h1>${formatSpotTitle(session.workoutName)}</h1><small>${new Date(session.finishedAt).toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"})}</small></div>
     <div class="completion-metric-grid"><div><span>Duration</span><strong data-completion-value="${duration}" data-completion-suffix=" min">0</strong></div><div><span>${cardioOnly ? "Cardio" : "Sets"}</span><strong data-completion-value="${cardioOnly ? cardioMinutes : sets}" data-completion-suffix="${cardioOnly ? " min" : ""}">0</strong></div><div><span>${cardioOnly ? "Exercises" : "Volume"}</span><strong data-completion-value="${cardioOnly ? (session.exercises || []).length : volume}" data-completion-suffix="${cardioOnly ? "" : " kg"}">0</strong></div><div><span>Avg effort</span><strong data-completion-value="${effort || 0}" data-completion-decimals="1">${effort ? "0.0" : "—"}</strong></div></div>
     <div class="card completion-comparison"><h2>Previous Session</h2>${previousSession ? `<div><span>${cardioOnly ? "Cardio time" : "Volume"}</span><strong>${cardioOnly ? `${oldCardioMinutes} min` : `${oldVolume.toLocaleString()} kg`}</strong><em>${cardioOnly ? completionChange(cardioMinutes,oldCardioMinutes," min") : completionChange(volume,oldVolume," kg")}</em></div><div><span>Duration</span><strong>${oldDuration} min</strong><em>${completionChange(duration,oldDuration," min")}</em></div><div><span>Average effort</span><strong>${oldEffort ? oldEffort.toFixed(1) : "—"}</strong><em>${oldEffort ? completionChange(effort,oldEffort) : "—"}</em></div>` : "<p>No previous session to compare yet.</p>"}</div>
     ${session.workoutNote ? `<div class="card completion-comment"><h2>Workout Comments</h2>${completionCommentList(session.workoutNote)}</div>` : ""}
     ${weekStats?`<div class="card week-complete-summary"><header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${session.weekNumber}</small><h2>Week Complete</h2></div></header><div><span><strong>${weekStats.workouts}/${weekStats.planned}</strong><small>Workouts</small></span><span><strong>${weekStats.minutes}</strong><small>Minutes</small></span><span><strong>${weekStats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${weekStats.sets}</strong><small>Sets</small></span><span><strong>${weekStats.effort?weekStats.effort.toFixed(1):"—"}</strong><small>Avg effort</small></span></div></div>`:""}
+    <div class="card completion-xp-card${levelUp ? " level-up" : ""}"><div><small>${levelUp ? "Level up" : "Training XP"}</small><strong>${levelUp ? `Level ${levelState.level}` : `+${xpEarned.toLocaleString("en-GB")} XP`}</strong></div><span>${levelState.remaining.toLocaleString("en-GB")} / ${levelState.required.toLocaleString("en-GB")} XP</span><div class="completion-xp-track"><i style="--xp-progress:${Math.min(100,levelState.percentage)}%"></i></div></div>
     <p class="completion-insight">${insight}</p><p class="completion-next">${next}</p>
     ${(session.sessionChanges || []).length ? `<button type="button" id="applySessionChanges" class="completion-programme-update">Save session changes to programme</button>` : ""}
     <button type="button" id="closeWorkoutSummary" class="primary-button">Done</button>`;
@@ -407,11 +416,19 @@ function createSessionSet(plannedWeight, plannedReps, plannedRepTarget = "") {
 // START A WORKOUT
 function startWorkout(workoutId) {
   const savedSession = getSavedWorkoutSession();
-  if (savedSession) {
+  if (
+    savedSession &&
+    savedSession.workoutId === workoutId &&
+    Array.isArray(savedSession.exercises) &&
+    savedSession.exercises.length > 0
+  ) {
     currentSession = savedSession;
     showPage("workoutSession");
     renderWorkoutSession();
     return;
+  }
+  if (savedSession && (!savedSession.exercises?.length || savedSession.workoutId === workoutId)) {
+    clearActiveWorkoutSession();
   }
   const programme = getProgrammes().find(
     item => item.id === getActiveProgrammeId()

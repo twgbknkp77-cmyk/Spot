@@ -725,12 +725,69 @@ function getTrainingVolume() {
       }, 0), 0), 0));
 }
 
+function trainingSessionVolume(session) {
+  return Math.round((session?.exercises || []).reduce((exerciseTotal, exercise) => exerciseTotal +
+    (exercise.sets || []).reduce((setTotal, set) => setTotal + ((Number(set.weight) || 0) * (Number(set.reps) || 0)), 0), 0));
+}
+
+function trainingBestSet(exercise) {
+  const sets = (exercise?.sets || []).filter(set => Number(set.weight) >= 0 && Number(set.reps) > 0);
+  return sets.sort((a,b) => (Number(b.weight)-Number(a.weight)) || (Number(b.reps)-Number(a.reps)))[0] || null;
+}
+
+function calculateSessionXp(session, previousSession = null, weekCompleted = false) {
+  const volume = trainingSessionVolume(session);
+  let xp = 100 + Math.floor(volume / 100);
+  const cardioMinutes = (session?.exercises || []).reduce((sum, exercise) => sum + (exercise.type === "cardio" ? Number(exercise.durationMinutes) || 0 : 0), 0);
+  xp += Math.floor(cardioMinutes * 2);
+  if (previousSession) {
+    const oldVolume = trainingSessionVolume(previousSession);
+    if (oldVolume > 0 && volume > oldVolume) xp += Math.round(((volume - oldVolume) / oldVolume) * 100) * 5;
+    (session.exercises || []).forEach(exercise => {
+      const previousExercise = (previousSession.exercises || []).find(item => String(item.name || "").trim().toLowerCase() === String(exercise.name || "").trim().toLowerCase());
+      const currentBest = trainingBestSet(exercise), previousBest = trainingBestSet(previousExercise);
+      if (currentBest && previousBest && Number(currentBest.weight) >= Number(previousBest.weight) && Number(currentBest.reps) > Number(previousBest.reps)) xp += 25;
+    });
+  }
+  if (weekCompleted) xp += 200;
+  return Math.max(0, Math.round(xp));
+}
+
+function calculateTrainingXp() {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem("fitness_workout_history") || "[]"); } catch {}
+  if (!Array.isArray(history)) return 0;
+  history.sort((a,b) => new Date(a.finishedAt || a.startedAt) - new Date(b.finishedAt || b.startedAt));
+  const previousByWorkout = new Map();
+  let xp = 0;
+  history.forEach(session => {
+    const key = `${session.programmeId || session.programmeName}|${String(session.workoutName || "").toLowerCase()}`;
+    xp += calculateSessionXp(session, previousByWorkout.get(key) || null, false);
+    previousByWorkout.set(key, session);
+  });
+  const weeks = new Map();
+  history.forEach(session => {
+    const key = `${session.programmeId || session.programmeName}|${session.weekId || session.weekNumber}`;
+    if (!weeks.has(key)) weeks.set(key, { workouts:new Set(), planned:0 });
+    const group = weeks.get(key);
+    group.workouts.add(session.workoutId || session.workoutName);
+    group.planned = Math.max(group.planned, Number(session.scheduledWorkoutCount) || 0);
+  });
+  weeks.forEach(group => { if (group.planned > 0 && group.workouts.size >= group.planned) xp += 200; });
+  return Math.round(xp);
+}
+
+function trainingLevelFromXp(totalXp) {
+  let level = 1, remaining = Math.max(0, totalXp), required = 500;
+  while (remaining >= required) { remaining -= required; level += 1; required = 500 + (level - 1) * 250; }
+  return { level, remaining, required, percentage: required ? remaining / required * 100 : 0 };
+}
+
 function renderTrainingLevel() {
   const volume = getTrainingVolume();
-  const levelSize = 10000;
-  const level = Math.floor(volume / levelSize) + 1;
-  const withinLevel = volume % levelSize;
-  const percentage = Math.min(100, withinLevel / levelSize * 100);
+  const totalXp = calculateTrainingXp();
+  const levelState = trainingLevelFromXp(totalXp);
+  const { level, remaining, required, percentage } = levelState;
   const summary = document.getElementById("profileLevelSummary");
   if (summary) summary.textContent = `Level ${level}`;
   const number = document.getElementById("trainingLevelNumber");
@@ -739,13 +796,20 @@ function renderTrainingLevel() {
   const progress = document.getElementById("trainingLevelProgress");
   if (number) number.textContent = String(level);
   if (total) total.textContent = `${volume.toLocaleString("en-GB")} kg`;
-  if (next) next.textContent = `${withinLevel.toLocaleString("en-GB")} kg of ${levelSize.toLocaleString("en-GB")} kg`;
+  if (next) next.textContent = `${remaining.toLocaleString("en-GB")} of ${required.toLocaleString("en-GB")} XP`;
   if (progress) progress.style.width = `${percentage}%`;
+  const xpTotal = document.getElementById("trainingLevelXp");
+  if (xpTotal) xpTotal.textContent = `${totalXp.toLocaleString("en-GB")} XP`;
 }
 
 document.getElementById("openTrainingLevel")?.addEventListener("click", () => {
   renderTrainingLevel();
   showPage("trainingLevel");
+});
+document.getElementById("openProfileStatistics")?.addEventListener("click", () => {
+  window.statisticsReturnPage = "profile";
+  if (typeof openStatisticsPage === "function") openStatisticsPage();
+  else showPage("statistics");
 });
 document.getElementById("trainingLevelBack")?.addEventListener("click", () => showPage("profile"));
 renderTrainingLevel();

@@ -730,6 +730,7 @@ function drawExerciseProgressChart() {
       return value > 0 ? [{ value, date: sessionDate(session) }] : [];
     })
   })});
+  series.forEach(item => item.points = item.points.map((point, inputIndex) => ({ ...point, inputIndex })));
   if (display === "growth") {
     series.forEach(item => {
       const baseline=item.points.find(point=>point.value>0)?.value;
@@ -740,18 +741,17 @@ function drawExerciseProgressChart() {
   if (!allPoints.length) { container.innerHTML = emptyDashboardGraph("Complete a starred exercise to add its first result."); }
   else {
     const width=340,height=220,left=48,right=14,top=14,bottom=38;
-    const dates=allPoints.map(p=>new Date(p.date).getTime()), minDate=Math.min(...dates), maxDate=Math.max(...dates);
+    const maximumInputIndex=Math.max(0,...series.map(item=>Math.max(0,item.points.length-1)));
     const values=allPoints.map(p=>p.value),rawMin=Math.min(...values),rawMax=Math.max(...values);
     const spread=Math.max(rawMax-rawMin,display==="growth"?10:1),padding=spread*.14;
     const minValue=metric==="effort"?1:display==="growth"?(rawMin<0?rawMin-padding:0):Math.min(0,rawMin-padding),maxValue=metric==="effort"?5:Math.max(display==="growth"?0:rawMax,rawMax+padding);
-    const x=t=>maxDate===minDate?(left+width-right)/2:left+(t-minDate)/(maxDate-minDate)*(width-left-right);
+    const x=inputIndex=>maximumInputIndex===0?left:left+(inputIndex/maximumInputIndex)*(width-left-right);
     const y=v=>top+(maxValue-v)/(maxValue-minValue||1)*(height-top-bottom);
     const yTicks=[0,.333,.666,1].map(f=>{const value=minValue+(maxValue-minValue)*f,py=y(value);return `<line class="progress-grid" x1="${left}" y1="${py}" x2="${width-right}" y2="${py}"></line><text text-anchor="end" x="${left-7}" y="${py+4}">${display==="growth"?`${Math.round(value)}%`:metric==="weight"?value.toFixed(maxValue<20?1:0):Math.round(value)}</text>`}).join("");
-    const lines=series.map(item=>{if(!item.points.length)return"";const coords=item.points.map(p=>`${x(new Date(p.date).getTime())},${y(p.value)}`).join(" ");const dots=item.points.map((p,index)=>`<circle class="progress-chart-point${index===item.points.length-1?" is-latest":""}" style="fill:${item.colour}" cx="${x(new Date(p.date).getTime())}" cy="${y(p.value)}" r="${index===item.points.length-1?3.5:2.5}"></circle>`).join("");return `<polyline style="stroke:${item.colour}" points="${coords}"></polyline>${dots}`}).join("");
-    const first=new Date(minDate).toLocaleDateString("en-GB",{day:"numeric",month:"short"}),last=new Date(maxDate).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+    const lines=series.map(item=>{if(!item.points.length)return"";const coords=item.points.map(p=>`${x(p.inputIndex)},${y(p.value)}`).join(" ");const dots=item.points.map((p,index)=>`<circle class="progress-chart-point${index===item.points.length-1?" is-latest":""}" style="fill:${item.colour}" cx="${x(p.inputIndex)}" cy="${y(p.value)}" r="${index===item.points.length-1?3.5:2.5}"></circle>`).join("");return `<polyline style="stroke:${item.colour}" points="${coords}"></polyline>${dots}`}).join("");
     const unit=display==="growth"?"GROWTH %":metric==="weight"?"KG":metric==="effort"?"EFFORT":"REPS";
     const axisCentre=top+(height-top-bottom)/2;
-    container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${unit} progress over time"><g>${yTicks}</g><g class="progress-series">${lines}</g><text class="axis-label" x="${left}" y="${height-9}">${first}</text><text class="axis-label" text-anchor="end" x="${width-right}" y="${height-9}">${last}</text><text class="axis-title" text-anchor="middle" transform="rotate(-90 11 ${axisCentre})" x="11" y="${axisCentre}">${unit}</text></svg>`;
+    container.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${unit} progress by recorded session"><g>${yTicks}</g><g class="progress-series">${lines}</g><text class="axis-label" x="${left}" y="${height-9}">0</text><text class="axis-label" text-anchor="end" x="${width-right}" y="${height-9}">${maximumInputIndex}</text><text class="axis-title" text-anchor="middle" transform="rotate(-90 11 ${axisCentre})" x="11" y="${axisCentre}">${unit}</text></svg>`;
   }
   legend.innerHTML="";
   names.forEach((name,index)=>{const button=document.createElement("button");button.type="button";button.className="progress-legend-item";button.classList.toggle("is-hidden",progressHiddenExercises.has(normaliseProgressName(name)));button.innerHTML=`<span style="background:${progressLineColours[index%progressLineColours.length]}"></span>${name}`;button.onclick=()=>{const key=normaliseProgressName(name);progressHiddenExercises.has(key)?progressHiddenExercises.delete(key):progressHiddenExercises.add(key);saveProgressGraphFilters();drawExerciseProgressChart()};legend.appendChild(button)});

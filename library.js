@@ -93,9 +93,15 @@ function restartProgramme(id) {
   setActiveProgramme(id);
 }
 
-function requestProgrammeActivation(id) {
+async function requestProgrammeActivation(id) {
   if (getActiveProgrammeId() === id) {
-    deactivateProgramme(id);
+    const programme = getProgrammes().find(item => item.id === id);
+    const confirmed = await showSpotConfirm(
+      "Deactivate this programme?",
+      `${programme?.name || "This programme"} will remain saved and can be activated again at any time.`,
+      { confirmText: "Deactivate", cancelText: "Cancel", danger: true }
+    );
+    if (confirmed) deactivateProgramme(id);
     return;
   }
 
