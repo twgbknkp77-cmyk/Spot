@@ -1027,26 +1027,7 @@ function renderWorkoutSession() {
       renderWorkoutSession();
     });
 
-    const replaceExerciseButton = document.createElement("button");
-    replaceExerciseButton.type = "button";
-    replaceExerciseButton.textContent = "Replace exercise";
-    replaceExerciseButton.addEventListener("click", () => { menu.open = false; openSessionExerciseDialog(exerciseIndex); });
-
-    const removeExerciseButton = document.createElement("button");
-    removeExerciseButton.type = "button";
-    removeExerciseButton.className = "danger-text-button";
-    removeExerciseButton.textContent = "Remove from session";
-    removeExerciseButton.addEventListener("click", async () => {
-      menu.open = false;
-      if (!await showSpotConfirm("Remove this exercise?", "This only removes it from the current workout.", { confirmText: "Remove", cancelText: "Cancel", danger: true })) return;
-      currentSession.sessionChanges ||= [];
-      currentSession.sessionChanges.push({ type: "remove", originalId: exercise.id, originalTrackingId: exercise.trackingId, originalName: exercise.name });
-      currentSession.exercises.splice(exerciseIndex, 1);
-      saveActiveWorkoutSession();
-      renderWorkoutSession();
-    });
-
-    menuPanel.append(addButton, removeButton, replaceExerciseButton, removeExerciseButton);
+    menuPanel.append(addButton, removeButton);
     menu.append(summary, menuPanel);
     card.append(collapsedButton, titleRow);
 
