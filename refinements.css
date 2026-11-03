@@ -547,6 +547,51 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 
 .performance-latest,.performance-graph,.performance-summary-row { will-change:transform,filter; }
 
+/* Workout session clarity and stable collapse/reopen behaviour. */
+.profile-goal-hero[open] > label,
+.profile-goal-hero[open] > input,
+.profile-goal-hero[open] > .editor-actions {
+  width:calc(100% - 40px) !important;
+  max-width:calc(100% - 40px) !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+.session-exercise-title:has(.display-star) h2,
+.exercise-row:has(> .display-star) strong,
+.editor-exercise-row:has(.exercise-star-button.is-starred) strong { color:#e4a43b !important; }
+.previous-session-heading {
+  width:max-content;max-width:100%;margin:1px 0 7px !important;padding:6px 9px;
+  color:#dedede !important;background:#171717;border:1px solid #3b3b3b;border-radius:8px;
+  font-size:13px !important;font-weight:700;line-height:1.35;
+}
+.previous-session-note,.previous-session-effort { margin:2px 0;color:#c7c7c7 !important;font-size:14px !important;line-height:1.45; }
+.session-set-row { grid-template-columns:72px minmax(0,1fr) minmax(0,1fr) !important; }
+.session-set-number { display:grid;gap:3px;align-content:center;min-width:0; }
+.session-set-number strong { font-size:18px; }
+.session-set-number small { color:#aaa;font-size:10px;line-height:1.15;white-space:nowrap; }
+.session-exercise-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+.session-exercise-actions .exercise-reopen-button { display:none; }
+.session-exercise-actions .session-edit-menu { display:block; }
+.exercise-is-collapsed > :not(.session-exercise-title):not(.session-exercise-actions) { display:none !important; }
+.exercise-is-collapsed .session-exercise-actions .exercise-reopen-button { display:flex; }
+.exercise-is-collapsed .session-exercise-actions .session-edit-menu { display:none; }
+.session-exercise-card { overflow:clip; }
+
+/* Completion and history use the same subtle orange cell language. */
+.completion-metric-grid > div,.completion-comparison,.completion-comment,.week-complete-summary,
+.workouts-week-statistics span { border-color:rgba(255,140,0,.34) !important; }
+.history-workout-note-edit textarea,.history-edit-card textarea,.comment-entry-copy textarea {
+  color:var(--white) !important;background:#171717 !important;border:1px solid #444 !important;border-radius:13px !important;
+}
+.history-week-group { display:grid;gap:12px;margin:20px 0 0; }
+.history-week-group > header { display:grid;gap:3px;padding:0 4px; }
+.history-week-group > header small { color:var(--orange);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase; }
+.history-week-group > header h2 { margin:0;font-size:18px; }
+.history-week-group .history-session-card { margin:0 !important; }
+.progress-chart-point { stroke:#151515;stroke-width:1.5; }
+.progress-chart-point.is-latest { stroke:#f5f5f5;stroke-width:1.5; }
+.progress-axis { display:none !important; }
+
 /* Centred single-action dialogs. */
 .decision-dialog-actions:has(> button:only-child),
 .stacked-dialog-actions:has(> button:only-child),

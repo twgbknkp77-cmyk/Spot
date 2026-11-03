@@ -2,6 +2,9 @@
 function getSavedWorkoutHistory(){try{const value=JSON.parse(localStorage.getItem("fitness_workout_history")||"[]");return Array.isArray(value)?value:[]}catch{return[]}}
 function saveWorkoutHistory(history){localStorage.setItem("fitness_workout_history",JSON.stringify(history));if(typeof updateDashboard==="function")updateDashboard()}
 function historyDate(value){return new Date(value).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+function historyWeekStart(value){const date=new Date(value);date.setHours(0,0,0,0);date.setDate(date.getDate()-((date.getDay()+6)%7));return date}
+function historyWeekKey(value){const date=historyWeekStart(value);return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}
+function historyWeekLabel(value){const start=historyWeekStart(value),end=new Date(start);end.setDate(end.getDate()+6);return `${start.toLocaleDateString("en-GB",{day:"numeric",month:"short"})} – ${end.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}`}
 function historyReturnPage(){return window.workoutHistoryReturnPage||"profile"}
 function setHistoryBack(label,run){const button=document.getElementById("workoutHistoryBack");button.setAttribute("aria-label",label);button.onclick=run}
 function historyButton(text,run,className="history-view-button"){const button=document.createElement("button");button.type="button";button.className=className;button.textContent=text;button.onclick=run;return button}
@@ -44,7 +47,8 @@ function renderWorkoutHistory(){
 function viewWorkoutBlockHistory(sessions){
  const container=document.getElementById("workoutHistoryList");setHistoryBack("Back to History",renderWorkoutHistory);container.innerHTML="";
  const summary=document.createElement("div");summary.className="card history-detail-summary";summary.innerHTML=`<h2>${formatSpotTitle(sessions[0].programmeName||"Workout Block")}</h2><p>Started ${historyDate(sessions[0].programmeRunStartedAt||sessions[0].startedAt||sessions[0].finishedAt)}</p>`;container.appendChild(summary);
- [...sessions].sort((a,b)=>new Date(b.finishedAt)-new Date(a.finishedAt)).forEach(session=>{const card=document.createElement("div");card.className="card history-session-card";const title=document.createElement("h3");title.textContent=formatSpotTitle(session.workoutName);const meta=document.createElement("p");meta.textContent=`${historyDate(session.finishedAt)}${session.weekNumber?` • Week ${session.weekNumber}`:""}`;card.append(title,meta,historyButton("View",()=>viewWorkoutHistoryDetails(session,sessions)));container.appendChild(card)})
+ const weeks=new Map();sessions.forEach(session=>{const key=historyWeekKey(session.finishedAt);if(!weeks.has(key))weeks.set(key,[]);weeks.get(key).push(session)});
+ [...weeks.values()].sort((a,b)=>new Date(b[0].finishedAt)-new Date(a[0].finishedAt)).forEach(items=>{const group=document.createElement("section");group.className="history-week-group";const heading=document.createElement("header");heading.innerHTML=`<small>Training week</small><h2>${historyWeekLabel(items[0].finishedAt)}</h2>`;group.appendChild(heading);items.sort((a,b)=>new Date(b.finishedAt)-new Date(a.finishedAt)).forEach(session=>{const card=document.createElement("div");card.className="card history-session-card";const title=document.createElement("h3");title.textContent=formatSpotTitle(session.workoutName);const meta=document.createElement("p");meta.textContent=`${historyDate(session.finishedAt)}${session.weekNumber?` • Week ${session.weekNumber}`:""}`;card.append(title,meta,historyButton("View",()=>viewWorkoutHistoryDetails(session,sessions)));group.appendChild(card)});container.appendChild(group)})
 }
 
 function historyExerciseIsStarred(session,exercise){

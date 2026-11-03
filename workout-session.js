@@ -220,6 +220,7 @@ function renderWorkoutCompletionSummary(session, previousSession, progression) {
     <p class="completion-insight">${insight}</p><p class="completion-next">${next}</p><button type="button" id="closeWorkoutSummary" class="primary-button">Done</button>`;
   document.getElementById("closeWorkoutSummary")?.addEventListener("click", () => { spotHaptic(18); showPage("workouts"); });
   showPage("workoutComplete");
+  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
   spotHaptic([45,35,80]);
   container.querySelectorAll("[data-completion-value]").forEach(element => {
     const target=Number(element.dataset.completionValue)||0;if(!target&&element.textContent==="—")return;
@@ -321,6 +322,8 @@ function getPreviousExerciseResult(exercise, beforeTime, workoutId, workoutName)
         ? session.exercises
         : []
     ).find(item => {
+      const sameTrackingId = exercise.trackingId && item.trackingId &&
+        exercise.trackingId === item.trackingId;
       const sameId =
         exercise.id &&
         item.id &&
@@ -330,7 +333,7 @@ function getPreviousExerciseResult(exercise, beforeTime, workoutId, workoutName)
         sessionExerciseName(item.name) ===
         sessionExerciseName(exercise.name);
 
-      return sameId || sameName;
+      return sameTrackingId || sameId || sameName;
     });
 
     if (previousExercise) {
@@ -541,11 +544,13 @@ function renderWorkoutSessionLegacy() {
       exercise.completed ? `Reopen ${exercise.name}` : `Complete ${exercise.name}`
     );
     completeButton.addEventListener("click", () => {
-      const reopening=exercise.completed;spotHaptic(reopening?12:24);
-      if(!reopening){animateSessionCard(card,true,()=>{exercise.completed=true;exercise.collapsed=true;saveActiveWorkoutSession();renderWorkoutSessionWithLayoutMotion()});return}
-      exercise.completed=false;exercise.collapsed=false;saveActiveWorkoutSession();renderWorkoutSessionWithLayoutMotion();
-      const opened=[...document.querySelectorAll(".session-exercise-card")].find(item=>item.dataset.exerciseKey===String(exercise.id||exercise.name));
-      animateSessionCard(opened,false,()=>{if(opened)opened.style.overflow=""});
+      spotHaptic(exercise.completed ? 12 : 24);
+      exercise.completed = !exercise.completed;
+      exercise.collapsed = exercise.completed;
+      card.classList.toggle("exercise-is-complete", exercise.completed);
+      card.classList.toggle("exercise-is-collapsed", exercise.collapsed);
+      completeButton.setAttribute("aria-label", exercise.completed ? `Reopen ${exercise.name}` : `Complete ${exercise.name}`);
+      saveActiveWorkoutSession();
     });
 
     const previousHeading = document.createElement("p");
@@ -740,11 +745,18 @@ function renderWorkoutSession() {
       exercise.completed ? `Reopen ${exercise.name}` : `Complete ${exercise.name}`
     );
     completeButton.addEventListener("click", () => {
-      const reopening=exercise.completed;spotHaptic(reopening?12:24);
-      if(!reopening){animateSessionCard(card,true,()=>{exercise.completed=true;exercise.collapsed=true;saveActiveWorkoutSession();renderWorkoutSessionWithLayoutMotion()});return}
-      exercise.completed=false;exercise.collapsed=false;saveActiveWorkoutSession();renderWorkoutSessionWithLayoutMotion();
-      const opened=[...document.querySelectorAll(".session-exercise-card")].find(item=>item.dataset.exerciseKey===String(exercise.id||exercise.name));
-      animateSessionCard(opened,false,()=>{if(opened)opened.style.overflow=""});
+      const startHeight = card.getBoundingClientRect().height;
+      spotHaptic(exercise.completed ? 12 : 24);
+      exercise.completed = !exercise.completed;
+      exercise.collapsed = exercise.completed;
+      card.classList.toggle("exercise-is-complete", exercise.completed);
+      card.classList.toggle("exercise-is-collapsed", exercise.collapsed);
+      completeButton.setAttribute("aria-label", exercise.completed ? `Reopen ${exercise.name}` : `Complete ${exercise.name}`);
+      saveActiveWorkoutSession();
+      requestAnimationFrame(() => card.animate(
+        [{ height: `${startHeight}px` }, { height: `${card.getBoundingClientRect().height}px` }],
+        { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" }
+      ));
     });
 
     const menu = document.createElement("details");
@@ -791,23 +803,23 @@ function renderWorkoutSession() {
 
     const actionRow = document.createElement("div");
     actionRow.className = "session-exercise-actions";
-
-    if (exercise.collapsed) {
-      const editCompleted = document.createElement("button");
-      editCompleted.type = "button";
-      editCompleted.textContent = "Edit";
-      editCompleted.addEventListener("click", () => {
-        spotHaptic(12);
-        exercise.completed = false;
-        exercise.collapsed = false;
-        saveActiveWorkoutSession();
-        renderWorkoutSession();
-      });
-      actionRow.append(completeButton, editCompleted);
-      card.appendChild(actionRow);
-      container.appendChild(card);
-      return;
-    }
+    const editCompleted = document.createElement("button");
+    editCompleted.type = "button";
+    editCompleted.className = "exercise-reopen-button";
+    editCompleted.textContent = "Edit";
+    editCompleted.addEventListener("click", () => {
+      const startHeight = card.getBoundingClientRect().height;
+      spotHaptic(12);
+      exercise.completed = false;
+      exercise.collapsed = false;
+      card.classList.remove("exercise-is-complete", "exercise-is-collapsed");
+      completeButton.setAttribute("aria-label", `Complete ${exercise.name}`);
+      saveActiveWorkoutSession();
+      requestAnimationFrame(() => card.animate(
+        [{ height: `${startHeight}px` }, { height: `${card.getBoundingClientRect().height}px` }],
+        { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" }
+      ));
+    });
 
     const previous = document.createElement("p");
     previous.className = "previous-session-heading";
@@ -894,8 +906,17 @@ function renderWorkoutSession() {
       const row = document.createElement("div");
       row.className = "session-set-row";
 
-      const number = document.createElement("strong");
-      number.textContent = String(setIndex + 1);
+      const number = document.createElement("span");
+      number.className = "session-set-number";
+      const numberText = document.createElement("strong");
+      numberText.textContent = String(setIndex + 1);
+      number.appendChild(numberText);
+      const previousSet = exercise.previousResult?.sets?.[setIndex];
+      if (previousSet) {
+        const previousSetText = document.createElement("small");
+        previousSetText.textContent = `${Number(previousSet.weight) || 0} kg × ${Number(previousSet.reps) || 0}`;
+        number.appendChild(previousSetText);
+      }
 
       const weightLabel = document.createElement("label");
       const weightInput = document.createElement("input");
@@ -976,8 +997,8 @@ function renderWorkoutSession() {
     card.appendChild(effort);
 
     actionRow.appendChild(completeButton);
+    actionRow.appendChild(editCompleted);
     if (exercise.type !== "cardio") actionRow.appendChild(menu);
-    else actionRow.classList.add("single-action");
     card.appendChild(actionRow);
 
     container.appendChild(card);
