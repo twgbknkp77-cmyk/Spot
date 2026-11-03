@@ -1029,7 +1029,10 @@ function renderWorkoutSession() {
 
     menuPanel.append(addButton, removeButton);
     menu.append(summary, menuPanel);
-    card.append(collapsedButton, titleRow);
+    // The whole completed card is the reopen control now. The old
+    // `collapsedButton` control was removed from the design, so referencing it
+    // here stopped rendering on the very first exercise.
+    card.append(titleRow);
 
     const actionRow = document.createElement("div");
     actionRow.className = "session-exercise-actions";
