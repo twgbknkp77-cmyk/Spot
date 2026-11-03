@@ -18,7 +18,7 @@
 
   <!-- MAIN STYLESHEET -->
   <link rel="stylesheet" href="style.css?v=46">
-  <link rel="stylesheet" href="refinements.css?v=29">
+  <link rel="stylesheet" href="refinements.css?v=30">
 </head>
 
 <body>
@@ -471,6 +471,8 @@
     <!-- Exercises will appear here automatically -->
   </div>
 
+  <button type="button" id="addSessionExercise" class="session-add-exercise-button">+ Add Exercise</button>
+
   <div class="session-action-bar">
     <p id="sessionProgress" hidden>0 results recorded</p>
     <button type="button" id="finishWorkout" class="primary-button">Finish Workout</button>
@@ -531,6 +533,32 @@
     <button type="button" id="endRestTimer" class="danger-text-button">End</button>
   </div>
   <button type="button" id="closeRestTimer">Cancel</button>
+</dialog>
+
+<dialog id="sessionExerciseDialog" class="session-exercise-dialog" aria-labelledby="sessionExerciseDialogTitle">
+  <form id="sessionExerciseForm">
+    <h2 id="sessionExerciseDialogTitle">Add Exercise</h2>
+    <input type="hidden" id="sessionExerciseIndex">
+    <label for="sessionExerciseType">Exercise type</label>
+    <select id="sessionExerciseType"><option value="strength">Strength</option><option value="cardio">Cardio</option></select>
+    <label for="sessionExerciseName">Exercise name</label>
+    <input id="sessionExerciseName" type="text" autocomplete="off" required>
+    <div id="sessionStrengthFields" class="session-exercise-fields">
+      <div class="session-exercise-form-grid">
+        <label>Sets<input id="sessionExerciseSets" type="number" inputmode="numeric" min="1" value="3"></label>
+        <label>Reps<input id="sessionExerciseReps" type="text" inputmode="text" value="10" placeholder="8-10"></label>
+      </div>
+      <label for="sessionExerciseWeight">Target weight</label>
+      <input id="sessionExerciseWeight" type="number" inputmode="decimal" min="0" step="0.5">
+    </div>
+    <div id="sessionCardioFields" class="session-exercise-fields" hidden>
+      <label for="sessionExerciseDuration">Target time (minutes)</label>
+      <input id="sessionExerciseDuration" type="number" inputmode="numeric" min="1">
+    </div>
+    <label for="sessionExerciseNote">Notes</label>
+    <textarea id="sessionExerciseNote" rows="3" maxlength="500"></textarea>
+    <div class="modal-actions"><button type="button" id="cancelSessionExercise">Cancel</button><button type="submit" class="primary-button">Save</button></div>
+  </form>
 </dialog>
 
 <section id="workoutComplete" class="page">
@@ -1097,7 +1125,7 @@
   <script src="library.js?v=44"></script>
   <script src="programme-overview.js?v=6"></script>
   <script src="programme-editor.js?v=38"></script>
-  <script src="workout-session.js?v=42"></script>
+  <script src="workout-session.js?v=43"></script>
   <script src="workout-history.js?v=23"></script>
   <script src="profile.js?v=10"></script>
   <script src="statistics.js?v=17"></script>

@@ -217,7 +217,18 @@ function renderWorkoutCompletionSummary(session, previousSession, progression) {
     <div class="card completion-comparison"><h2>Previous Session</h2>${previousSession ? `<div><span>${cardioOnly ? "Cardio time" : "Volume"}</span><strong>${cardioOnly ? `${oldCardioMinutes} min` : `${oldVolume.toLocaleString()} kg`}</strong><em>${cardioOnly ? completionChange(cardioMinutes,oldCardioMinutes," min") : completionChange(volume,oldVolume," kg")}</em></div><div><span>Duration</span><strong>${oldDuration} min</strong><em>${completionChange(duration,oldDuration," min")}</em></div><div><span>Average effort</span><strong>${oldEffort ? oldEffort.toFixed(1) : "—"}</strong><em>${oldEffort ? completionChange(effort,oldEffort) : "—"}</em></div>` : "<p>No previous session to compare yet.</p>"}</div>
     ${session.workoutNote ? `<div class="card completion-comment"><h2>Workout Comments</h2>${completionCommentList(session.workoutNote)}</div>` : ""}
     ${weekStats?`<div class="card week-complete-summary"><header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${session.weekNumber}</small><h2>Week Complete</h2></div></header><div><span><strong>${weekStats.workouts}/${weekStats.planned}</strong><small>Workouts</small></span><span><strong>${weekStats.minutes}</strong><small>Minutes</small></span><span><strong>${weekStats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${weekStats.sets}</strong><small>Sets</small></span><span><strong>${weekStats.effort?weekStats.effort.toFixed(1):"—"}</strong><small>Avg effort</small></span></div></div>`:""}
-    <p class="completion-insight">${insight}</p><p class="completion-next">${next}</p><button type="button" id="closeWorkoutSummary" class="primary-button">Done</button>`;
+    <p class="completion-insight">${insight}</p><p class="completion-next">${next}</p>
+    ${(session.sessionChanges || []).length ? `<button type="button" id="applySessionChanges" class="completion-programme-update">Save session changes to programme</button>` : ""}
+    <button type="button" id="closeWorkoutSummary" class="primary-button">Done</button>`;
+  document.getElementById("applySessionChanges")?.addEventListener("click", async event => {
+    const button = event.currentTarget;
+    if (!applySessionChangesToProgramme(session)) return;
+    button.textContent = "Saved to programme";
+    button.disabled = true;
+    spotHaptic(16);
+    if (typeof renderLibrary === "function") renderLibrary();
+    if (typeof renderActiveWorkout === "function") renderActiveWorkout();
+  });
   document.getElementById("closeWorkoutSummary")?.addEventListener("click", () => { spotHaptic(18); showPage("workouts"); });
   showPage("workoutComplete");
   requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
@@ -498,6 +509,112 @@ function previousSessionBest(exercise) {
   }, sets[0]);
 }
 
+function sessionExerciseProgrammeShape(exercise) {
+  return {
+    id: createId(),
+    trackingId: exercise.trackingId || createId(),
+    name: exercise.name,
+    type: exercise.type || "strength",
+    sets: exercise.type === "cardio" ? 0 : Number(exercise.targetSets) || exercise.sets?.length || 1,
+    reps: exercise.type === "cardio" ? "" : exercise.targetRepLabel || "1",
+    weight: exercise.type === "cardio" ? "" : Number(exercise.targetWeight) || 0,
+    durationMinutes: exercise.type === "cardio" ? Number(exercise.targetDurationMinutes) || 0 : undefined,
+    note: exercise.note || ""
+  };
+}
+
+function applySessionChangesToProgramme(session) {
+  const changes = session?.sessionChanges || [];
+  if (!changes.length) return false;
+  const programmes = getProgrammes();
+  const programme = programmes.find(item => item.id === session.programmeId);
+  if (!programme) return false;
+  const normalise = value => String(value || "").trim().toLowerCase();
+  (programme.weeks || []).forEach(week => {
+    if (Number(week.number) < Number(session.weekNumber)) return;
+    const day = (week.trainingDays || []).find(item =>
+      normalise(item.name) === normalise(session.workoutName)
+    );
+    if (!day) return;
+    day.exercises ||= [];
+    changes.forEach(change => {
+      const matches = item =>
+        (change.originalTrackingId && item.trackingId === change.originalTrackingId) ||
+        (change.originalId && item.id === change.originalId) ||
+        normalise(item.name) === normalise(change.originalName);
+      if (change.type === "remove") day.exercises = (day.exercises || []).filter(item => !matches(item));
+      if (change.type === "replace") {
+        const index = (day.exercises || []).findIndex(matches);
+        if (index >= 0) day.exercises[index] = { ...change.exercise, id: createId() };
+      }
+      if (change.type === "add" && !(day.exercises || []).some(item => item.trackingId === change.exercise.trackingId)) {
+        day.exercises.push({ ...change.exercise, id: createId() });
+      }
+    });
+  });
+  saveProgrammes(programmes);
+  return true;
+}
+
+function openSessionExerciseDialog(index = null) {
+  if (!currentSession) return;
+  const dialog = document.getElementById("sessionExerciseDialog");
+  const exercise = Number.isInteger(index) ? currentSession.exercises[index] : null;
+  document.getElementById("sessionExerciseDialogTitle").textContent = exercise ? "Replace Exercise" : "Add Exercise";
+  document.getElementById("sessionExerciseIndex").value = exercise ? String(index) : "";
+  document.getElementById("sessionExerciseType").value = exercise?.type || "strength";
+  document.getElementById("sessionExerciseName").value = exercise?.name || "";
+  document.getElementById("sessionExerciseSets").value = exercise?.targetSets || 3;
+  document.getElementById("sessionExerciseReps").value = exercise?.targetRepLabel || "10";
+  document.getElementById("sessionExerciseWeight").value = exercise?.targetWeight || "";
+  document.getElementById("sessionExerciseDuration").value = exercise?.targetDurationMinutes || "";
+  document.getElementById("sessionExerciseNote").value = exercise?.note || "";
+  updateSessionExerciseTypeFields();
+  dialog.showModal();
+}
+
+function updateSessionExerciseTypeFields() {
+  const cardio = document.getElementById("sessionExerciseType")?.value === "cardio";
+  document.getElementById("sessionStrengthFields").hidden = cardio;
+  document.getElementById("sessionCardioFields").hidden = !cardio;
+}
+
+document.getElementById("addSessionExercise")?.addEventListener("click", () => openSessionExerciseDialog());
+document.getElementById("sessionExerciseType")?.addEventListener("change", updateSessionExerciseTypeFields);
+document.getElementById("cancelSessionExercise")?.addEventListener("click", () => document.getElementById("sessionExerciseDialog")?.close());
+document.getElementById("sessionExerciseForm")?.addEventListener("submit", event => {
+  event.preventDefault();
+  const indexValue = document.getElementById("sessionExerciseIndex").value;
+  const index = indexValue === "" ? null : Number(indexValue);
+  const existing = Number.isInteger(index) ? currentSession.exercises[index] : null;
+  const type = document.getElementById("sessionExerciseType").value;
+  const repTarget = document.getElementById("sessionExerciseReps").value.trim() || "1";
+  const targetSets = Math.max(1, Number(document.getElementById("sessionExerciseSets").value) || 1);
+  const trackingId = existing?.trackingId || createId();
+  const exercise = {
+    id: createId(), trackingId, starred: false,
+    name: document.getElementById("sessionExerciseName").value.trim(), type,
+    note: document.getElementById("sessionExerciseNote").value.trim(), sessionNote: "", effort: null,
+    completed: false, collapsed: false, targetSets: type === "cardio" ? 0 : targetSets,
+    targetWeight: type === "cardio" ? "" : Number(document.getElementById("sessionExerciseWeight").value) || 0,
+    targetRepLabel: type === "cardio" ? "" : repTarget, previousResult: null,
+    targetDurationMinutes: type === "cardio" ? Number(document.getElementById("sessionExerciseDuration").value) || 0 : undefined,
+    durationMinutes: type === "cardio" ? "" : undefined,
+    sets: type === "cardio" ? [] : Array.from({ length: targetSets }, () => createSessionSet(Number(document.getElementById("sessionExerciseWeight").value) || 0, parseExerciseRepTarget(repTarget)?.min || 1, repTarget))
+  };
+  currentSession.sessionChanges ||= [];
+  if (existing) {
+    currentSession.sessionChanges.push({ type: "replace", originalId: existing.id, originalTrackingId: existing.trackingId, originalName: existing.name, exercise: sessionExerciseProgrammeShape(exercise) });
+    currentSession.exercises[index] = exercise;
+  } else {
+    currentSession.exercises.push(exercise);
+    currentSession.sessionChanges.push({ type: "add", exercise: sessionExerciseProgrammeShape(exercise) });
+  }
+  saveActiveWorkoutSession();
+  document.getElementById("sessionExerciseDialog").close();
+  renderWorkoutSession();
+});
+
 
 // DISPLAY WORKOUT SESSION
 function renderWorkoutSessionLegacy() {
@@ -514,13 +631,33 @@ function renderWorkoutSessionLegacy() {
 
   container.innerHTML = "";
 
-  currentSession.exercises.forEach(exercise => {
+  currentSession.exercises.forEach((exercise, exerciseIndex) => {
     exercise.starred = currentSessionExerciseIsStarred(exercise);
     const card = document.createElement("div");
     card.className = "card session-exercise-card";
     card.classList.toggle("exercise-is-complete", Boolean(exercise.completed));
     card.classList.toggle("exercise-is-collapsed", Boolean(exercise.collapsed));
     card.dataset.exerciseKey = exercise.id || exercise.name;
+
+    const collapsedButton = document.createElement("button");
+    collapsedButton.type = "button";
+    collapsedButton.className = "collapsed-exercise-button";
+    const recordedSets = (exercise.sets || []).filter(set => set.weight !== "" && set.reps !== "");
+    const bestRecorded = recordedSets.sort((a, b) => (Number(b.weight) - Number(a.weight)) || (Number(b.reps) - Number(a.reps)))[0];
+    const completedSummary = exercise.type === "cardio"
+      ? `${Number(exercise.durationMinutes) || 0} min`
+      : bestRecorded ? `${Number(bestRecorded.weight) || 0} kg × ${Number(bestRecorded.reps) || 0}` : "Completed";
+    collapsedButton.innerHTML = `<span class="collapsed-exercise-check"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><span><strong>${formatSpotTitle(exercise.name)}</strong><small>${completedSummary}</small></span><svg class="collapsed-exercise-chevron" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>`;
+    collapsedButton.addEventListener("click", () => {
+      const startHeight = card.getBoundingClientRect().height;
+      spotHaptic(12);
+      exercise.completed = false;
+      exercise.collapsed = false;
+      card.classList.remove("exercise-is-complete", "exercise-is-collapsed");
+      completeButton.setAttribute("aria-label", `Complete ${exercise.name}`);
+      saveActiveWorkoutSession();
+      requestAnimationFrame(() => card.animate([{ height: `${startHeight}px` }, { height: `${card.getBoundingClientRect().height}px` }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" }));
+    });
 
     const titleRow = document.createElement("div");
     titleRow.className = "session-exercise-title";
@@ -547,6 +684,14 @@ function renderWorkoutSessionLegacy() {
       spotHaptic(exercise.completed ? 12 : 24);
       exercise.completed = !exercise.completed;
       exercise.collapsed = exercise.completed;
+      if (exercise.completed) {
+        const completedSets = (exercise.sets || []).filter(set => set.weight !== "" && set.reps !== "");
+        const best = completedSets.sort((a, b) => (Number(b.weight) - Number(a.weight)) || (Number(b.reps) - Number(a.reps)))[0];
+        const summary = exercise.type === "cardio"
+          ? `${Number(exercise.durationMinutes) || 0} min`
+          : best ? `${Number(best.weight) || 0} kg × ${Number(best.reps) || 0}` : "Completed";
+        collapsedButton.querySelector("small").textContent = summary;
+      }
       card.classList.toggle("exercise-is-complete", exercise.completed);
       card.classList.toggle("exercise-is-collapsed", exercise.collapsed);
       completeButton.setAttribute("aria-label", exercise.completed ? `Reopen ${exercise.name}` : `Complete ${exercise.name}`);
@@ -797,29 +942,31 @@ function renderWorkoutSession() {
       renderWorkoutSession();
     });
 
-    menuPanel.append(addButton, removeButton);
+    const replaceExerciseButton = document.createElement("button");
+    replaceExerciseButton.type = "button";
+    replaceExerciseButton.textContent = "Replace exercise";
+    replaceExerciseButton.addEventListener("click", () => { menu.open = false; openSessionExerciseDialog(exerciseIndex); });
+
+    const removeExerciseButton = document.createElement("button");
+    removeExerciseButton.type = "button";
+    removeExerciseButton.className = "danger-text-button";
+    removeExerciseButton.textContent = "Remove from session";
+    removeExerciseButton.addEventListener("click", async () => {
+      menu.open = false;
+      if (!await showSpotConfirm("Remove this exercise?", "This only removes it from the current workout.", { confirmText: "Remove", cancelText: "Cancel", danger: true })) return;
+      currentSession.sessionChanges ||= [];
+      currentSession.sessionChanges.push({ type: "remove", originalId: exercise.id, originalTrackingId: exercise.trackingId, originalName: exercise.name });
+      currentSession.exercises.splice(exerciseIndex, 1);
+      saveActiveWorkoutSession();
+      renderWorkoutSession();
+    });
+
+    menuPanel.append(addButton, removeButton, replaceExerciseButton, removeExerciseButton);
     menu.append(summary, menuPanel);
-    card.appendChild(titleRow);
+    card.append(collapsedButton, titleRow);
 
     const actionRow = document.createElement("div");
     actionRow.className = "session-exercise-actions";
-    const editCompleted = document.createElement("button");
-    editCompleted.type = "button";
-    editCompleted.className = "exercise-reopen-button";
-    editCompleted.textContent = "Edit";
-    editCompleted.addEventListener("click", () => {
-      const startHeight = card.getBoundingClientRect().height;
-      spotHaptic(12);
-      exercise.completed = false;
-      exercise.collapsed = false;
-      card.classList.remove("exercise-is-complete", "exercise-is-collapsed");
-      completeButton.setAttribute("aria-label", `Complete ${exercise.name}`);
-      saveActiveWorkoutSession();
-      requestAnimationFrame(() => card.animate(
-        [{ height: `${startHeight}px` }, { height: `${card.getBoundingClientRect().height}px` }],
-        { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" }
-      ));
-    });
 
     const previous = document.createElement("p");
     previous.className = "previous-session-heading";
@@ -988,8 +1135,8 @@ function renderWorkoutSession() {
     card.appendChild(effort);
 
     actionRow.appendChild(completeButton);
-    actionRow.appendChild(editCompleted);
     if (exercise.type !== "cardio") actionRow.appendChild(menu);
+    else actionRow.classList.add("single-action");
     card.appendChild(actionRow);
 
     container.appendChild(card);
