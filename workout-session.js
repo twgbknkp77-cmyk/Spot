@@ -409,8 +409,8 @@ function startWorkout(workoutId) {
   const savedSession = getSavedWorkoutSession();
   if (savedSession) {
     currentSession = savedSession;
-    renderWorkoutSession();
     showPage("workoutSession");
+    renderWorkoutSession();
     return;
   }
   const programme = getProgrammes().find(
@@ -486,8 +486,8 @@ function startWorkout(workoutId) {
   };
 
   saveActiveWorkoutSession();
-  renderWorkoutSession();
   showPage("workoutSession");
+  renderWorkoutSession();
 }
 
 

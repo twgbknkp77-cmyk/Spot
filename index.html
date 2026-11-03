@@ -18,7 +18,7 @@
 
   <!-- MAIN STYLESHEET -->
   <link rel="stylesheet" href="style.css?v=46">
-  <link rel="stylesheet" href="refinements.css?v=30">
+  <link rel="stylesheet" href="refinements.css?v=32">
 </head>
 
 <body>
@@ -655,6 +655,11 @@
 </details>
 
 <section class="profile-group"><h2>Your Training</h2><div class="profile-group-panel">
+<button type="button" id="openTrainingLevel" class="profile-link-card profile-group-row">
+  <span class="profile-row-icon"><svg aria-hidden="true"><use href="#icon-trophy"></use></svg></span>
+  <span><strong>Training Level</strong><small id="profileLevelSummary">Level 1</small></span>
+  <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+</button>
 <button type="button" id="openProfileHistory" class="profile-link-card profile-group-row">
   <span class="profile-row-icon"><svg aria-hidden="true"><use href="#icon-history"></use></svg></span>
   <span><strong>Workout History</strong><small>Review your completed training sessions</small></span>
@@ -693,6 +698,17 @@
 
 </section>
 <!-- END PROFILE PAGE -->
+
+<section id="trainingLevel" class="page">
+  <div class="page-header history-header"><button type="button" class="icon-button" id="trainingLevelBack" aria-label="Back to Profile"><svg aria-hidden="true"><use href="#icon-arrow-left"></use></svg></button><h1>Training Level</h1></div>
+  <div class="card training-level-card">
+    <span class="training-level-emblem"><svg aria-hidden="true"><use href="#icon-trophy"></use></svg></span>
+    <small>Current level</small><strong id="trainingLevelNumber">1</strong>
+    <div class="training-level-track"><span id="trainingLevelProgress"></span></div>
+    <p id="trainingLevelNext">0 kg of 10,000 kg</p>
+  </div>
+  <div class="card training-level-volume"><span>Total training volume</span><strong id="trainingLevelVolume">0 kg</strong></div>
+</section>
 
 <section id="dataBackup" class="page">
   <div class="page-header history-header"><button type="button" class="icon-button" id="dataBackupBack" aria-label="Back to Profile"><svg aria-hidden="true"><use href="#icon-arrow-left"></use></svg></button><h1>Data &amp; Backup</h1></div>
@@ -907,6 +923,7 @@
       workoutNotes: 3.25,
       dataBackup: 3.25,
       profile: 3,
+      trainingLevel: 3.1,
       statistics: 1.25,
       exerciseStatistics: 1.5,
       measurements: 3.5
@@ -977,6 +994,7 @@
     workoutHistory: window.workoutHistoryReturnPage || "profile",
     workoutNotes: "profile",
     dataBackup: "profile",
+    trainingLevel: "profile",
     workoutSession: "workouts",
     workoutComplete: "workouts",
     statistics: "workouts",
@@ -1019,6 +1037,9 @@
 
     if (typeof populateExerciseSuggestions === "function") {
       populateExerciseSuggestions();
+    }
+    if (typeof renderTrainingLevel === "function") {
+      renderTrainingLevel();
     }
   }
 
@@ -1122,13 +1143,13 @@
 
   <script src="storage.js?v=15"></script>
   <script src="dashboard.js?v=35"></script>
-  <script src="library.js?v=44"></script>
+  <script src="library.js?v=45"></script>
   <script src="programme-overview.js?v=6"></script>
   <script src="programme-editor.js?v=38"></script>
-  <script src="workout-session.js?v=43"></script>
+  <script src="workout-session.js?v=44"></script>
   <script src="workout-history.js?v=23"></script>
-  <script src="profile.js?v=10"></script>
-  <script src="statistics.js?v=17"></script>
+  <script src="profile.js?v=11"></script>
+  <script src="statistics.js?v=18"></script>
   <script src="measurements.js?v=5"></script>
   <script src="data-management.js?v=6"></script>
   <script src="onboarding.js?v=1"></script>

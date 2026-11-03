@@ -712,3 +712,40 @@ document
 populateExerciseSuggestions();
 renderBodyweightGoal();
 renderExerciseGoals();
+
+function getTrainingVolume() {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem("fitness_workout_history") || "[]"); } catch {}
+  if (!Array.isArray(history)) return 0;
+  return Math.round(history.reduce((sessionTotal, session) => sessionTotal +
+    (session.exercises || []).reduce((exerciseTotal, exercise) => exerciseTotal +
+      (exercise.sets || []).reduce((setTotal, set) => {
+        if (set.completed === false && (set.weight === "" || set.reps === "")) return setTotal;
+        return setTotal + ((Number(set.weight) || 0) * (Number(set.reps) || 0));
+      }, 0), 0), 0));
+}
+
+function renderTrainingLevel() {
+  const volume = getTrainingVolume();
+  const levelSize = 10000;
+  const level = Math.floor(volume / levelSize) + 1;
+  const withinLevel = volume % levelSize;
+  const percentage = Math.min(100, withinLevel / levelSize * 100);
+  const summary = document.getElementById("profileLevelSummary");
+  if (summary) summary.textContent = `Level ${level}`;
+  const number = document.getElementById("trainingLevelNumber");
+  const total = document.getElementById("trainingLevelVolume");
+  const next = document.getElementById("trainingLevelNext");
+  const progress = document.getElementById("trainingLevelProgress");
+  if (number) number.textContent = String(level);
+  if (total) total.textContent = `${volume.toLocaleString("en-GB")} kg`;
+  if (next) next.textContent = `${withinLevel.toLocaleString("en-GB")} kg of ${levelSize.toLocaleString("en-GB")} kg`;
+  if (progress) progress.style.width = `${percentage}%`;
+}
+
+document.getElementById("openTrainingLevel")?.addEventListener("click", () => {
+  renderTrainingLevel();
+  showPage("trainingLevel");
+});
+document.getElementById("trainingLevelBack")?.addEventListener("click", () => showPage("profile"));
+renderTrainingLevel();

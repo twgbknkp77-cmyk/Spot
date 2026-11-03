@@ -1392,9 +1392,11 @@ function renderActiveWorkout() {
         detailHeader.appendChild(completed);
       } else if (isActiveProgramme) {
         const start = document.createElement("button");
+        start.type = "button";
         start.className = "primary-button workout-detail-start";
         start.textContent = "Start Workout";
-        start.addEventListener("click", async () => {
+        start.addEventListener("click", async event => {
+          event.stopPropagation();
           if (viewedWorkoutWeek !== programme.currentWeek) {
             changeActiveProgrammeWeek(programme.id, viewedWorkoutWeek);
           }
