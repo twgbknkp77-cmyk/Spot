@@ -952,6 +952,34 @@ function renderWorkoutSession() {
     card.classList.toggle("exercise-is-collapsed", Boolean(exercise.collapsed));
     card.dataset.exerciseKey = exercise.id || exercise.name;
 
+    const collapsedButton = document.createElement("button");
+    collapsedButton.type = "button";
+    collapsedButton.className = "collapsed-exercise-button";
+
+    const completedExerciseSummary = () => {
+      if (exercise.type === "cardio") {
+        return `${Number(exercise.durationMinutes) || 0} min`;
+      }
+      const recordedSets = (exercise.sets || [])
+        .filter(set => set.weight !== "" && set.reps !== "")
+        .sort((a, b) =>
+          (Number(b.weight) - Number(a.weight)) ||
+          (Number(b.reps) - Number(a.reps))
+        );
+      const best = recordedSets[0];
+      return best
+        ? `${Number(best.weight) || 0} kg × ${Number(best.reps) || 0} reps`
+        : "Completed";
+    };
+
+    const updateCollapsedButton = () => {
+      collapsedButton.innerHTML = `
+        <span class="collapsed-exercise-check"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span>
+        <span><strong>${formatSpotTitle(exercise.name)}</strong><small>${completedExerciseSummary()}</small></span>
+        <svg class="collapsed-exercise-chevron" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>`;
+    };
+    updateCollapsedButton();
+
     const titleRow = document.createElement("div");
     titleRow.className = "session-exercise-title";
 
@@ -979,6 +1007,7 @@ function renderWorkoutSession() {
       spotHaptic(exercise.completed ? 12 : 24);
       exercise.completed = !exercise.completed;
       exercise.collapsed = exercise.completed;
+      updateCollapsedButton();
       card.classList.toggle("exercise-is-complete", exercise.completed);
       card.classList.toggle("exercise-is-collapsed", exercise.collapsed);
       completeButton.setAttribute("aria-label", exercise.completed ? `Reopen ${exercise.name}` : `Complete ${exercise.name}`);
@@ -986,6 +1015,20 @@ function renderWorkoutSession() {
       requestAnimationFrame(() => card.animate(
         [{ height: `${startHeight}px` }, { height: `${card.getBoundingClientRect().height}px` }],
         { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" }
+      ));
+    });
+
+    collapsedButton.addEventListener("click", () => {
+      const startHeight = card.getBoundingClientRect().height;
+      spotHaptic(12);
+      exercise.completed = false;
+      exercise.collapsed = false;
+      card.classList.remove("exercise-is-complete", "exercise-is-collapsed");
+      completeButton.setAttribute("aria-label", `Complete ${exercise.name}`);
+      saveActiveWorkoutSession();
+      requestAnimationFrame(() => card.animate(
+        [{ height: `${startHeight}px` }, { height: `${card.getBoundingClientRect().height}px` }],
+        { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" }
       ));
     });
 
@@ -1029,10 +1072,7 @@ function renderWorkoutSession() {
 
     menuPanel.append(addButton, removeButton);
     menu.append(summary, menuPanel);
-    // The whole completed card is the reopen control now. The old
-    // `collapsedButton` control was removed from the design, so referencing it
-    // here stopped rendering on the very first exercise.
-    card.append(titleRow);
+    card.append(collapsedButton, titleRow);
 
     const actionRow = document.createElement("div");
     actionRow.className = "session-exercise-actions";

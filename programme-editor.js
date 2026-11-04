@@ -332,17 +332,34 @@ function renderProgrammeEditor() {
     button.classList.toggle("active", optionWeek.number === editingWeekNumber);
     if (optionWeek.number === editingWeekNumber) button.dataset.selectedWeek = "true";
     button.addEventListener("click", () => {
+      if (optionWeek.number === editingWeekNumber) return;
+      const previousWeek = editingWeekNumber;
+      const pageScroll = window.scrollY;
       editingWeekNumber = optionWeek.number;
       renderProgrammeEditor();
+      window.scrollTo({ top: pageScroll, behavior: "auto" });
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        const direction = optionWeek.number > previousWeek ? 1 : -1;
+        container.querySelectorAll(".editor-day-card").forEach((card, index) => {
+          card.animate(
+            [
+              { opacity: 0, transform: `translateX(${direction * 12}px)` },
+              { opacity: 1, transform: "translateX(0)" }
+            ],
+            { duration: 180, delay: index * 18, easing: "cubic-bezier(.2,.8,.2,1)" }
+          );
+        });
+      }
     });
     weekTabs.appendChild(button);
   });
   container.appendChild(weekTabs);
   requestAnimationFrame(() => {
-    weekTabs.querySelector("[data-selected-week='true']")?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest"
+    const selected = weekTabs.querySelector("[data-selected-week='true']");
+    if (!selected) return;
+    weekTabs.scrollTo({
+      left: selected.offsetLeft - (weekTabs.clientWidth - selected.offsetWidth) / 2,
+      behavior: "smooth"
     });
   });
 
@@ -458,8 +475,11 @@ function renderProgrammeEditor() {
       star.setAttribute("aria-label", starred ? `Unstar ${exercise.name}` : `Star ${exercise.name}`);
       star.addEventListener("click", event => {
         event.stopPropagation();
-        persistProgrammeStar(programme, workout, exercise, !isExerciseStarred(programme, exercise));
-        renderProgrammeEditor();
+        const nextStarred = !isExerciseStarred(programme, exercise);
+        persistProgrammeStar(programme, workout, exercise, nextStarred);
+        star.classList.toggle("is-starred", nextStarred);
+        star.setAttribute("aria-label", nextStarred ? `Unstar ${exercise.name}` : `Star ${exercise.name}`);
+        if (typeof spotHaptic === "function") spotHaptic(10);
       });
       actions.appendChild(star);
       actions.appendChild(menu);

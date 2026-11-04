@@ -361,8 +361,6 @@ body.session-active #workoutSession .session-action-bar .primary-button { displa
 .bodyweight-goal-stats > span { display:grid;gap:3px; }
 .bodyweight-goal-stats small { color:var(--grey);font-size:10px;text-transform:uppercase;letter-spacing:.04em; }
 .bodyweight-goal-stats strong { font-size:14px; }
-.bodyweight-goal-track { grid-column:1 / -1;height:7px;overflow:hidden;background:#343434;border-radius:999px; }
-.bodyweight-goal-track span { display:block;width:0;height:100%;background:linear-gradient(90deg,#b85e00,var(--orange));border-radius:inherit;transition:width 500ms cubic-bezier(.2,.8,.2,1); }
 .profile-goal-hero[open] > label,.profile-goal-hero[open] > input,.profile-goal-hero[open] > .editor-actions { box-sizing:border-box;width:calc(100% - 40px);min-width:0;max-width:calc(100% - 40px);margin-right:20px;margin-left:20px; }
 .profile-goal-hero[open] > #goalBodyweight,.profile-goal-hero[open] > #goalBodyweightDate { box-sizing:border-box !important;width:calc(100% - 40px) !important;inline-size:calc(100% - 40px) !important;min-width:0 !important;max-width:calc(100% - 40px) !important; }
 .profile-goal-hero[open] > .editor-actions { margin-bottom:20px; }
@@ -560,9 +558,9 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 .exercise-row:has(> .display-star) strong,
 .editor-exercise-row:has(.exercise-star-button.is-starred) strong { color:#e4a43b !important; }
 .previous-session-heading {
-  width:max-content;max-width:100%;margin:1px 0 7px !important;padding:6px 9px;
-  color:#dedede !important;background:#171717;border:1px solid #3b3b3b;border-radius:8px;
-  font-size:13px !important;font-weight:700;line-height:1.35;
+  width:auto;max-width:100%;margin:2px 0 9px !important;padding:0;
+  color:var(--grey) !important;background:transparent;border:0;border-radius:0;
+  font-size:14px !important;font-style:italic;font-weight:500;line-height:1.4;
 }
 .previous-session-note,.previous-session-effort { margin:2px 0;color:#c7c7c7 !important;font-size:14px !important;line-height:1.45; }
 .session-set-row { grid-template-columns:30px minmax(0,1fr) minmax(0,1fr) !important; }
@@ -647,9 +645,31 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 .history-week-group > header small { color:var(--orange);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase; }
 .history-week-group > header h2 { margin:0;font-size:18px; }
 .history-week-group .history-session-card { margin:0 !important; }
-.progress-chart-point { stroke:#151515;stroke-width:1.5; }
-.progress-chart-point.is-latest { stroke:#f5f5f5;stroke-width:1.5; }
+.progress-chart-point { stroke-width:1.5; }
+.progress-chart-point.is-latest { stroke-width:1.5; }
 .progress-axis { display:none !important; }
+
+/* Graph markers use the same colour for their fill and rim. */
+.weight-chart-point,
+.weight-chart-point.is-latest,
+.weight-chart-point.is-selected {
+  stroke:var(--orange) !important;
+  stroke-width:1.5 !important;
+}
+
+/* Align goal labels with the text inset used by their input fields. */
+.profile-goal-hero[open] > label {
+  box-sizing:border-box;
+  padding-left:18px;
+  padding-right:18px;
+}
+
+.exercise-star-button,
+.exercise-star-button svg,
+.editor-exercise-row strong {
+  transition:color 180ms ease,fill 180ms ease,stroke 180ms ease,transform 180ms ease;
+}
+.exercise-star-button:active svg { transform:scale(.9); }
 
 /* Centred single-action dialogs. */
 .decision-dialog-actions:has(> button:only-child),
