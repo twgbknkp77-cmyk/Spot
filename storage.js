@@ -72,7 +72,11 @@ function getExerciseRepTarget(exercise) {
 
 function formatExercisePrescription(exercise) {
   if (exercise?.type === "cardio") {
-    return `${exercise.durationMinutes || 0} min target`;
+    const time = `${exercise.durationMinutes || 0} min`;
+    const distance = Number(exercise.distanceKm) > 0
+      ? ` • ${Number(exercise.distanceKm)} km`
+      : "";
+    return `${time}${distance} target`;
   }
 
   return `${exercise?.sets || 0} sets × ` +

@@ -616,6 +616,8 @@ function openExerciseDialog(programme, week, workout, exercise = null) {
   document.getElementById("exerciseWeightInput").value = exercise?.weight || "";
   document.getElementById("exerciseDurationInput").value =
     exercise?.durationMinutes || "";
+  document.getElementById("exerciseDistanceInput").value =
+    exercise?.distanceKm || "";
   document.getElementById("exerciseNoteInput").value = exercise?.note || "";
   updateExerciseTypeFields();
 
@@ -653,6 +655,8 @@ document.getElementById("exerciseForm")?.addEventListener("submit", async event 
   const durationMinutes = Number(
     document.getElementById("exerciseDurationInput").value
   );
+  const distanceText = document.getElementById("exerciseDistanceInput").value.trim();
+  const distanceKm = distanceText === "" ? "" : Number(distanceText);
 
   const invalidStrength = type === "strength" && (
     !Number.isInteger(sets) || sets < 1 ||
@@ -660,7 +664,8 @@ document.getElementById("exerciseForm")?.addEventListener("submit", async event 
     (weightText !== "" && (!Number.isFinite(weight) || weight < 0))
   );
   const invalidCardio = type === "cardio" && (
-    !Number.isInteger(durationMinutes) || durationMinutes < 1
+    !Number.isInteger(durationMinutes) || durationMinutes < 1 ||
+    (distanceText !== "" && (!Number.isFinite(distanceKm) || distanceKm < 0))
   );
 
   if (!name || invalidStrength || invalidCardio) {
@@ -686,7 +691,7 @@ document.getElementById("exerciseForm")?.addEventListener("submit", async event 
 
   const displayName = formatSpotTitle(name);
   const values = type === "cardio"
-    ? { name: displayName, type, durationMinutes, note }
+    ? { name: displayName, type, durationMinutes, distanceKm, note }
     : {
         name: displayName,
         type,

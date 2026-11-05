@@ -1,6 +1,6 @@
 // SPOT — WORKOUT HISTORY
 function getSavedWorkoutHistory(){try{const value=JSON.parse(localStorage.getItem("fitness_workout_history")||"[]");return Array.isArray(value)?value:[]}catch{return[]}}
-function saveWorkoutHistory(history){localStorage.setItem("fitness_workout_history",JSON.stringify(history));if(typeof updateDashboard==="function")updateDashboard()}
+function saveWorkoutHistory(history){localStorage.setItem("fitness_workout_history",JSON.stringify(history));if(typeof updateDashboard==="function")updateDashboard();if(typeof renderLibrary==="function")renderLibrary();if(typeof renderActiveWorkout==="function")renderActiveWorkout()}
 function historyDate(value){return new Date(value).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
 function historyWeekStart(value){const date=new Date(value);date.setHours(0,0,0,0);date.setDate(date.getDate()-((date.getDay()+6)%7));return date}
 function historyWeekKey(value){const date=historyWeekStart(value);return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}

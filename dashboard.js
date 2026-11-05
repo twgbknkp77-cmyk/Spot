@@ -49,6 +49,8 @@ let dashboardNextDestination = "library";
 dashboardStartWorkout?.addEventListener("click", () => {
   if (!dashboardNextWorkoutId) return;
 
+  if (typeof spotHaptic === "function") spotHaptic(12);
+
   if (typeof startWorkout === "function") {
     startWorkout(dashboardNextWorkoutId);
   }

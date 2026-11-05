@@ -1239,7 +1239,7 @@ function renderLibrary() {
       ? "Draft"
       : isActive
         ? ""
-        : '<svg aria-hidden="true"><use href="#icon-play"></use></svg><span>Start</span>';
+        : "Start";
     activationButton.hidden = isActive;
     activationButton.disabled = Boolean(programme.isDraft);
     activationButton.setAttribute(
@@ -1249,6 +1249,7 @@ function renderLibrary() {
     activationButton.addEventListener("click", event => {
       event.stopPropagation();
       if (programme.isDraft) return;
+      if (typeof spotHaptic === "function") spotHaptic(12);
       requestProgrammeActivation(programme.id);
     });
     if (!isActive) card.appendChild(activationButton);
@@ -1481,9 +1482,10 @@ function renderActiveWorkout() {
         const start = document.createElement("button");
         start.type = "button";
         start.className = "primary-button workout-detail-start";
-        start.textContent = "Start Workout";
+        start.textContent = "Start";
         start.addEventListener("click", async event => {
           event.stopPropagation();
+          if (typeof spotHaptic === "function") spotHaptic(12);
           if (viewedWorkoutWeek !== programme.currentWeek) {
             changeActiveProgrammeWeek(programme.id, viewedWorkoutWeek);
           }
@@ -1567,9 +1569,10 @@ function renderActiveWorkout() {
     const startButton = document.createElement("button");
     startButton.type = "button";
     startButton.className = "primary-button compact-start-button";
-    startButton.textContent = "Start Workout";
+    startButton.textContent = "Start";
     startButton.addEventListener("click", async event => {
       event.stopPropagation();
+      if (typeof spotHaptic === "function") spotHaptic(12);
       if (viewedWorkoutWeek !== programme.currentWeek) {
         changeActiveProgrammeWeek(programme.id, viewedWorkoutWeek);
       }

@@ -151,6 +151,11 @@ function completedCardioMinutes(session) {
     .reduce((total, exercise) => total + (Number(exercise.durationMinutes) || 0), 0);
 }
 
+function completedCardioDistance(session) {
+  return (session.exercises || []).filter(exercise => exercise.type === "cardio")
+    .reduce((total, exercise) => total + (Number(exercise.distanceKm) || 0), 0);
+}
+
 function completionChange(current, previous, suffix = "") {
   if (!previous) return "—";
   const difference = current - previous;
@@ -194,6 +199,8 @@ function renderWorkoutCompletionSummary(session, previousSession, progression, o
   const oldEffort = previousSession ? completedSessionEffort(previousSession) : 0;
   const cardioMinutes = completedCardioMinutes(session);
   const oldCardioMinutes = previousSession ? completedCardioMinutes(previousSession) : 0;
+  const cardioDistance = completedCardioDistance(session);
+  const oldCardioDistance = previousSession ? completedCardioDistance(previousSession) : 0;
   const cardioOnly = cardioMinutes > 0 && volume === 0;
   let insight = "Your first result for this workout is now saved.";
   if (previousSession) {
@@ -221,8 +228,8 @@ function renderWorkoutCompletionSummary(session, previousSession, progression, o
   const levelUp = levelState.level > previousLevelState.level;
   container.innerHTML = `
     <div class="completion-hero"><span class="completion-check">✓</span><p>Workout Complete</p><h1>${formatSpotTitle(session.workoutName)}</h1><small>${new Date(session.finishedAt).toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"})}</small></div>
-    <div class="completion-metric-grid"><div><span>Duration</span><strong data-completion-value="${duration}" data-completion-suffix=" min">0</strong></div><div><span>${cardioOnly ? "Cardio" : "Sets"}</span><strong data-completion-value="${cardioOnly ? cardioMinutes : sets}" data-completion-suffix="${cardioOnly ? " min" : ""}">0</strong></div><div><span>${cardioOnly ? "Exercises" : "Volume"}</span><strong data-completion-value="${cardioOnly ? (session.exercises || []).length : volume}" data-completion-suffix="${cardioOnly ? "" : " kg"}">0</strong></div><div><span>Avg effort</span><strong data-completion-value="${effort || 0}" data-completion-decimals="1">${effort ? "0.0" : "—"}</strong></div></div>
-    <div class="card completion-comparison"><h2>Previous Session</h2>${previousSession ? `<div><span>${cardioOnly ? "Cardio time" : "Volume"}</span><strong>${cardioOnly ? `${oldCardioMinutes} min` : `${oldVolume.toLocaleString()} kg`}</strong><em>${cardioOnly ? completionChange(cardioMinutes,oldCardioMinutes," min") : completionChange(volume,oldVolume," kg")}</em></div><div><span>Duration</span><strong>${oldDuration} min</strong><em>${completionChange(duration,oldDuration," min")}</em></div><div><span>Average effort</span><strong>${oldEffort ? oldEffort.toFixed(1) : "—"}</strong><em>${oldEffort ? completionChange(effort,oldEffort) : "—"}</em></div>` : "<p>No previous session to compare yet.</p>"}</div>
+    <div class="completion-metric-grid"><div><span>Duration</span><strong data-completion-value="${duration}" data-completion-suffix=" min">0</strong></div><div><span>${cardioOnly ? "Cardio" : "Sets"}</span><strong data-completion-value="${cardioOnly ? cardioMinutes : sets}" data-completion-suffix="${cardioOnly ? " min" : ""}">0</strong></div><div><span>${cardioOnly && cardioDistance > 0 ? "Distance" : cardioOnly ? "Exercises" : "Volume"}</span><strong data-completion-value="${cardioOnly && cardioDistance > 0 ? cardioDistance : cardioOnly ? (session.exercises || []).length : volume}" data-completion-suffix="${cardioOnly && cardioDistance > 0 ? " km" : cardioOnly ? "" : " kg"}">0</strong></div><div><span>Avg effort</span><strong data-completion-value="${effort || 0}" data-completion-decimals="1">${effort ? "0.0" : "—"}</strong></div></div>
+    <div class="card completion-comparison"><h2>Previous Session</h2>${previousSession ? `<div><span>${cardioOnly ? "Cardio time" : "Volume"}</span><strong>${cardioOnly ? `${oldCardioMinutes} min` : `${oldVolume.toLocaleString()} kg`}</strong><em>${cardioOnly ? completionChange(cardioMinutes,oldCardioMinutes," min") : completionChange(volume,oldVolume," kg")}</em></div>${cardioOnly && (cardioDistance > 0 || oldCardioDistance > 0) ? `<div><span>Distance</span><strong>${oldCardioDistance} km</strong><em>${completionChange(cardioDistance,oldCardioDistance," km")}</em></div>` : ""}<div><span>Duration</span><strong>${oldDuration} min</strong><em>${completionChange(duration,oldDuration," min")}</em></div><div><span>Average effort</span><strong>${oldEffort ? oldEffort.toFixed(1) : "—"}</strong><em>${oldEffort ? completionChange(effort,oldEffort) : "—"}</em></div>` : "<p>No previous session to compare yet.</p>"}</div>
     ${session.workoutNote ? `<div class="card completion-comment"><h2>Workout Comments</h2>${completionCommentList(session.workoutNote)}</div>` : ""}
     ${weekStats?`<div class="card week-complete-summary"><header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${session.weekNumber}</small><h2>Week Complete</h2></div></header><div><span><strong>${weekStats.workouts}/${weekStats.planned}</strong><small>Workouts</small></span><span><strong>${weekStats.minutes}</strong><small>Minutes</small></span><span><strong>${weekStats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${weekStats.sets}</strong><small>Sets</small></span><span><strong>${weekStats.effort?weekStats.effort.toFixed(1):"—"}</strong><small>Avg effort</small></span></div></div>`:""}
     <div class="card completion-xp-card${levelUp ? " level-up" : ""}"><div><small>${levelUp ? "Level up" : "Training XP"}</small><strong>${levelUp ? `Level ${levelState.level}` : `+${xpEarned.toLocaleString("en-GB")} XP`}</strong></div><span>${levelState.remaining.toLocaleString("en-GB")} / ${levelState.required.toLocaleString("en-GB")} XP</span><div class="completion-xp-track"><i style="--xp-progress:${Math.min(100,levelState.percentage)}%"></i></div></div>
@@ -382,6 +389,7 @@ function getPreviousExerciseResult(exercise, beforeTime, workoutId, workoutName)
         note: previousExercise.sessionNote || "",
         effort: Number(previousExercise.effort) || null,
         durationMinutes: previousExercise.durationMinutes,
+        distanceKm: previousExercise.distanceKm,
         sets: Array.isArray(previousExercise.sets)
           ? previousExercise.sets.filter(set => set.completed)
           : []
@@ -466,6 +474,8 @@ function createSessionExercises(programme, workout, startedTime) {
     previousResult: getPreviousExerciseResult(exercise, startedTime, workout.id, workout.name),
     targetDurationMinutes: exercise.type === "cardio" ? Number(exercise.durationMinutes) || 0 : undefined,
     durationMinutes: exercise.type === "cardio" ? "" : undefined,
+    targetDistanceKm: exercise.type === "cardio" && exercise.distanceKm !== "" ? Number(exercise.distanceKm) || 0 : undefined,
+    distanceKm: exercise.type === "cardio" ? "" : undefined,
     sets: exercise.type === "cardio" ? [] : Array.from(
       { length: Math.max(1, Number(exercise.sets) || 0) },
       () => createSessionSet(exercise.weight, getExerciseRepTarget(exercise).min, getExerciseRepTarget(exercise).value)
@@ -619,6 +629,7 @@ function sessionExerciseProgrammeShape(exercise) {
     reps: exercise.type === "cardio" ? "" : exercise.targetRepLabel || "1",
     weight: exercise.type === "cardio" ? "" : Number(exercise.targetWeight) || 0,
     durationMinutes: exercise.type === "cardio" ? Number(exercise.targetDurationMinutes) || 0 : undefined,
+    distanceKm: exercise.type === "cardio" && exercise.targetDistanceKm !== "" ? Number(exercise.targetDistanceKm) || 0 : undefined,
     note: exercise.note || ""
   };
 }
@@ -695,6 +706,7 @@ function openSessionExerciseDialog(index = null) {
   document.getElementById("sessionExerciseReps").value = exercise?.targetRepLabel || "10";
   document.getElementById("sessionExerciseWeight").value = exercise?.targetWeight || "";
   document.getElementById("sessionExerciseDuration").value = exercise?.targetDurationMinutes || "";
+  document.getElementById("sessionExerciseDistance").value = exercise?.targetDistanceKm || "";
   document.getElementById("sessionExerciseNote").value = exercise?.note || "";
   const position = document.getElementById("sessionExercisePosition");
   position.innerHTML = "";
@@ -766,6 +778,7 @@ document.getElementById("sessionExerciseForm")?.addEventListener("submit", event
   const type = document.getElementById("sessionExerciseType").value;
   const repTarget = document.getElementById("sessionExerciseReps").value.trim() || "1";
   const targetSets = Math.max(1, Number(document.getElementById("sessionExerciseSets").value) || 1);
+  const targetDistanceText = document.getElementById("sessionExerciseDistance").value.trim();
   const trackingId = existing?.trackingId || createId();
   const exercise = {
     id: createId(), trackingId, starred: false,
@@ -776,6 +789,8 @@ document.getElementById("sessionExerciseForm")?.addEventListener("submit", event
     targetRepLabel: type === "cardio" ? "" : repTarget, previousResult: null,
     targetDurationMinutes: type === "cardio" ? Number(document.getElementById("sessionExerciseDuration").value) || 0 : undefined,
     durationMinutes: type === "cardio" ? "" : undefined,
+    targetDistanceKm: type === "cardio" && targetDistanceText !== "" ? Number(targetDistanceText) || 0 : undefined,
+    distanceKm: type === "cardio" ? "" : undefined,
     sets: type === "cardio" ? [] : Array.from({ length: targetSets }, () => createSessionSet(Number(document.getElementById("sessionExerciseWeight").value) || 0, parseExerciseRepTarget(repTarget)?.min || 1, repTarget))
   };
   let change;
@@ -790,6 +805,12 @@ document.getElementById("sessionExerciseForm")?.addEventListener("submit", event
   commitLiveSessionChange(change);
   document.getElementById("sessionExerciseDialog").close();
   renderWorkoutSessionInPlace();
+});
+
+document.addEventListener("pointerdown", event => {
+  document.querySelectorAll(".session-edit-menu[open]").forEach(menu => {
+    if (!menu.contains(event.target)) menu.removeAttribute("open");
+  });
 });
 
 
@@ -1055,7 +1076,8 @@ function renderWorkoutSession() {
 
     const completedExerciseSummary = () => {
       if (exercise.type === "cardio") {
-        return `${Number(exercise.durationMinutes) || 0} min`;
+        const distance = Number(exercise.distanceKm) > 0 ? ` • ${Number(exercise.distanceKm)} km` : "";
+        return `${Number(exercise.durationMinutes) || 0} min${distance}`;
       }
       const recordedSets = (exercise.sets || [])
         .filter(set => set.weight !== "" && set.reps !== "")
@@ -1258,7 +1280,7 @@ function renderWorkoutSession() {
       const best = previousSessionBest(exercise);
 
       previous.textContent = exercise.type === "cardio"
-        ? `Last: ${Number(exercise.previousResult.durationMinutes) || 0} min • ${date}`
+        ? `Last: ${Number(exercise.previousResult.durationMinutes) || 0} min${Number(exercise.previousResult.distanceKm) > 0 ? ` • ${Number(exercise.previousResult.distanceKm)} km` : ""} • ${date}`
         : best
           ? `Last: ${Number(best.weight) || 0} kg × ${Number(best.reps) || 0} • ${date}`
           : `Last completed • ${date}`;
@@ -1278,7 +1300,8 @@ function renderWorkoutSession() {
     } else if (Number(exercise.targetDurationMinutes) > 0) {
       const target = document.createElement("p");
       target.className = "session-exercise-target";
-      target.textContent = `Target: ${Number(exercise.targetDurationMinutes)} minutes`;
+      target.textContent = `Target: ${Number(exercise.targetDurationMinutes)} minutes` +
+        (Number(exercise.targetDistanceKm) > 0 ? ` • ${Number(exercise.targetDistanceKm)} km` : "");
       card.appendChild(target);
     }
 
@@ -1327,6 +1350,23 @@ function renderWorkoutSession() {
       unit.textContent = "min";
       durationLabel.append(durationInput, unit);
       cardioRow.appendChild(durationLabel);
+      const distanceLabel = document.createElement("label");
+      distanceLabel.textContent = "Distance completed";
+      const distanceInput = document.createElement("input");
+      distanceInput.type = "number";
+      distanceInput.inputMode = "decimal";
+      distanceInput.min = "0";
+      distanceInput.step = "0.01";
+      distanceInput.value = exercise.distanceKm;
+      distanceInput.addEventListener("input", () => {
+        exercise.distanceKm = distanceInput.value === "" ? "" : Number(distanceInput.value);
+        updateSessionProgress();
+      });
+      const distanceUnit = document.createElement("span");
+      distanceUnit.className = "input-unit";
+      distanceUnit.textContent = "km";
+      distanceLabel.append(distanceInput, distanceUnit);
+      cardioRow.appendChild(distanceLabel);
       card.appendChild(cardioRow);
     }
 

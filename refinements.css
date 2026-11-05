@@ -612,7 +612,8 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 .session-scope-dialog .stacked-dialog-actions { display:grid;gap:12px;margin-top:16px; }
 .session-scope-dialog .stacked-dialog-actions button { width:100%;min-height:48px; }
 .session-edit-panel .danger-text-button { color:#ef6666; }
-.session-edit-panel button + button { border-top:1px solid #383838; }
+.session-edit-panel button { border-top:0 !important; }
+.session-edit-panel button:not(:last-child) { border-bottom:1px solid #383838; }
 .performance-plot { position:relative;width:100%;aspect-ratio:340 / 190; }
 .performance-plot svg { position:absolute;inset:0;width:100%;height:100%; }
 .performance-plot .performance-point { z-index:2; }
@@ -717,9 +718,15 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 .programme-activation-button:not(.is-active) {
   display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;min-height:38px;
-  margin-top:14px;padding:8px 14px;
+  margin:14px 0 0 auto;padding:8px 18px;color:var(--orange);background:#242424;
+  border-color:rgba(255,140,0,.5);
 }
-.programme-activation-button svg { width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2; }
+.workout-summary-card.next-workout {
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;
+}
+.workout-summary-card.next-workout .compact-start-button {
+  width:auto;min-width:88px;min-height:42px;margin:0;padding:9px 15px;
+}
 
 .completed-workout-review-card {
   display:grid;grid-template-columns:minmax(0,1fr) 26px;align-items:center;gap:14px;
