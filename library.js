@@ -1173,13 +1173,6 @@ function renderLibrary() {
     }
 
     const isActive = programme.id === activeId;
-    if (isActive) {
-      const badge = document.createElement("span");
-      badge.className = "programme-progress-badge";
-      badge.textContent = "In Progress";
-      card.appendChild(badge);
-    }
-
     const header = document.createElement("div");
     header.className = "compact-card-header";
 
@@ -1198,7 +1191,10 @@ function renderLibrary() {
     chevron.className = "programme-card-chevron";
     chevron.setAttribute("aria-hidden", "true");
     chevron.innerHTML = '<svg><use href="#icon-arrow-right"></use></svg>';
-    header.append(copy, chevron);
+    const controls = document.createElement("div");
+    controls.className = "programme-card-controls";
+    controls.appendChild(chevron);
+    header.append(copy, controls);
     card.appendChild(header);
 
     if (isActive) {
@@ -1252,7 +1248,7 @@ function renderLibrary() {
       if (typeof spotHaptic === "function") spotHaptic(12);
       requestProgrammeActivation(programme.id);
     });
-    if (!isActive) card.appendChild(activationButton);
+    if (!isActive) controls.appendChild(activationButton);
 
     card.addEventListener("click", event => {
       if (event.target.closest(".programme-activation-button")) return;

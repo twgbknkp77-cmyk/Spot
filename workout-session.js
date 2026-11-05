@@ -1075,9 +1075,10 @@ function renderWorkoutSession() {
     collapsedButton.className = "collapsed-exercise-button";
 
     const completedExerciseSummary = () => {
+      const effort = Number(exercise.effort) > 0 ? ` • Effort ${Number(exercise.effort)}/5` : "";
       if (exercise.type === "cardio") {
         const distance = Number(exercise.distanceKm) > 0 ? ` • ${Number(exercise.distanceKm)} km` : "";
-        return `${Number(exercise.durationMinutes) || 0} min${distance}`;
+        return `${Number(exercise.durationMinutes) || 0} min${distance}${effort}`;
       }
       const recordedSets = (exercise.sets || [])
         .filter(set => set.weight !== "" && set.reps !== "")
@@ -1087,8 +1088,8 @@ function renderWorkoutSession() {
         );
       const best = recordedSets[0];
       return best
-        ? `${Number(best.weight) || 0} kg × ${Number(best.reps) || 0} reps`
-        : "Completed";
+        ? `${Number(best.weight) || 0} kg × ${Number(best.reps) || 0} reps${effort}`
+        : `Completed${effort}`;
     };
 
     const updateCollapsedButton = () => {
@@ -1150,6 +1151,7 @@ function renderWorkoutSession() {
         { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" }
       ));
     });
+    collapsedButton.setAttribute("aria-label", `Reopen ${exercise.name}`);
 
     const menu = document.createElement("details");
     menu.className = "session-edit-menu";
@@ -1278,12 +1280,15 @@ function renderWorkoutSession() {
       const date = new Date(exercise.previousResult.finishedAt)
         .toLocaleDateString("en-GB", { day: "numeric", month: "short" });
       const best = previousSessionBest(exercise);
+      const previousEffort = Number(exercise.previousResult.effort) > 0
+        ? ` • Effort ${Number(exercise.previousResult.effort)}/5`
+        : "";
 
       previous.textContent = exercise.type === "cardio"
-        ? `Last: ${Number(exercise.previousResult.durationMinutes) || 0} min${Number(exercise.previousResult.distanceKm) > 0 ? ` • ${Number(exercise.previousResult.distanceKm)} km` : ""} • ${date}`
+        ? `Last: ${Number(exercise.previousResult.durationMinutes) || 0} min${Number(exercise.previousResult.distanceKm) > 0 ? ` • ${Number(exercise.previousResult.distanceKm)} km` : ""}${previousEffort} • ${date}`
         : best
-          ? `Last: ${Number(best.weight) || 0} kg × ${Number(best.reps) || 0} • ${date}`
-          : `Last completed • ${date}`;
+          ? `Last: ${Number(best.weight) || 0} kg × ${Number(best.reps) || 0}${previousEffort} • ${date}`
+          : `Last completed${previousEffort} • ${date}`;
     } else {
       previous.textContent = "No previous session";
     }
@@ -1305,6 +1310,8 @@ function renderWorkoutSession() {
       card.appendChild(target);
     }
 
+    card.appendChild(previous);
+
     if (exercise.note) {
       const note = document.createElement("p");
       note.className = "exercise-note session-exercise-note";
@@ -1312,20 +1319,11 @@ function renderWorkoutSession() {
       card.appendChild(note);
     }
 
-    card.appendChild(previous);
-
     if (exercise.previousResult?.note) {
       const lastNote = document.createElement("p");
       lastNote.className = "previous-session-note";
       lastNote.textContent = `Last session note: ${exercise.previousResult.note}`;
       card.appendChild(lastNote);
-    }
-
-    if (exercise.previousResult?.effort) {
-      const lastEffort = document.createElement("p");
-      lastEffort.className = "previous-session-effort";
-      lastEffort.textContent = `Last effort: ${exercise.previousResult.effort}/5`;
-      card.appendChild(lastEffort);
     }
 
     if (exercise.type === "cardio") {
