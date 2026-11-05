@@ -685,16 +685,16 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 /* Programme library: block-wide progress and compact activation controls. */
 .programme-card.active-programme {
   position:relative;
-  padding:16px 18px !important;
+  padding:13px 18px 15px !important;
   background:#1b1b1b !important;
   border:1.5px solid var(--orange) !important;
   box-shadow:0 0 0 1px rgba(255,140,0,.1),0 10px 28px rgba(255,140,0,.08) !important;
 }
-.programme-card.active-programme > .compact-card-header { margin-bottom:15px; }
+.programme-card.active-programme > .compact-card-header { margin-bottom:11px; }
 .programme-card.active-programme .programme-card-chevron {
   width:38px;height:38px;background:#242424;border-color:rgba(255,140,0,.48);border-radius:11px;
 }
-.programme-block-progress { display:grid;gap:7px; }
+.programme-block-progress { display:grid;gap:6px; }
 .programme-block-progress > strong { color:var(--orange);font-size:25px;line-height:1; }
 .programme-block-progress > small { color:var(--grey);font-size:12px; }
 .programme-block-progress-track { height:10px;overflow:hidden;background:#343434;border-radius:999px; }
@@ -704,7 +704,7 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 .programme-card-footer {
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin-top:18px;padding-top:15px;border-top:1px solid #353535;
+  margin-top:14px;padding-top:12px;border-top:1px solid #353535;
 }
 .programme-card-footer > span { color:var(--grey);font-size:13px;font-weight:650; }
 .programme-deactivate-button {
@@ -716,7 +716,14 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   margin:8px 0 0;padding:8px 18px;color:#111;background:var(--orange);
   border-color:var(--orange);box-shadow:0 5px 14px rgba(255,140,0,.14);
 }
-.programme-card-controls { display:grid;justify-items:end;align-content:start;gap:0; }
+.programme-card-controls { display:grid;justify-items:end;align-content:start;gap:0;max-width:100%; }
+.programme-card:not(.active-programme) > .compact-card-header {
+  grid-template-columns:minmax(0,1fr) 92px !important;
+}
+.programme-card:not(.active-programme) .programme-card-controls { width:92px; }
+.programme-card:not(.active-programme) .programme-activation-button {
+  box-sizing:border-box;max-width:92px;
+}
 .workout-summary-card.next-workout {
   display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;gap:8px 14px;
 }
