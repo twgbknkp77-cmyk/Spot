@@ -1108,6 +1108,28 @@ function renderActiveWorkoutLegacy() {
 }
 
 
+function programmeBlockProgress(programme, history) {
+  const normalise = value => String(value || "").trim().toLowerCase();
+  const scheduled = (programme.weeks || []).flatMap(week =>
+    (week.trainingDays || []).map(workout => ({ week, workout }))
+  );
+  const completed = scheduled.filter(({ week, workout }) =>
+    history.some(session => {
+      if (session.programmeId !== programme.id) return false;
+      const sameWeek = session.weekId && week.id
+        ? session.weekId === week.id
+        : Number(session.weekNumber) === Number(week.number);
+      const sameWorkout = session.workoutId
+        ? session.workoutId === workout.id
+        : normalise(session.workoutName) === normalise(workout.name);
+      return sameWeek && sameWorkout;
+    })
+  ).length;
+  const total = scheduled.length;
+  const percentage = total ? Math.min(100, (completed / total) * 100) : 0;
+  return { completed, total, percentage };
+}
+
 // COMPACT LIBRARY CARDS
 function renderLibrary() {
   const container = document.getElementById("programmeLibrary");
@@ -1150,6 +1172,14 @@ function renderLibrary() {
       card.classList.add("active-programme");
     }
 
+    const isActive = programme.id === activeId;
+    if (isActive) {
+      const badge = document.createElement("span");
+      badge.className = "programme-progress-badge";
+      badge.textContent = "In Progress";
+      card.appendChild(badge);
+    }
+
     const header = document.createElement("div");
     header.className = "compact-card-header";
 
@@ -1171,15 +1201,46 @@ function renderLibrary() {
     header.append(copy, chevron);
     card.appendChild(header);
 
+    if (isActive) {
+      const progress = programmeBlockProgress(programme, history);
+      const progressSection = document.createElement("div");
+      progressSection.className = "programme-block-progress";
+      const percentage = document.createElement("strong");
+      percentage.textContent = `${Number(progress.percentage.toFixed(1))}%`;
+      const progressTrack = document.createElement("div");
+      progressTrack.className = "programme-block-progress-track";
+      progressTrack.innerHTML = `<span style="width:${progress.percentage}%"></span>`;
+      const count = document.createElement("small");
+      count.textContent = `${progress.completed} of ${progress.total} workouts`;
+      progressSection.append(percentage, progressTrack, count);
+      card.appendChild(progressSection);
+
+      const footer = document.createElement("footer");
+      footer.className = "programme-card-footer";
+      const weekIndicator = document.createElement("span");
+      weekIndicator.textContent = `Week ${programme.currentWeek} of ${programme.durationWeeks}`;
+      const deactivate = document.createElement("button");
+      deactivate.type = "button";
+      deactivate.className = "programme-deactivate-button";
+      deactivate.textContent = "Deactivate";
+      deactivate.addEventListener("click", event => {
+        event.stopPropagation();
+        requestProgrammeActivation(programme.id);
+      });
+      footer.append(weekIndicator, deactivate);
+      card.appendChild(footer);
+    }
+
     const activationButton = document.createElement("button");
     activationButton.type = "button";
     activationButton.className = "programme-activation-button";
     activationButton.classList.toggle("is-active", programme.id === activeId);
-    activationButton.textContent = programme.isDraft
+    activationButton.innerHTML = programme.isDraft
       ? "Draft"
-      : programme.id === activeId
-        ? "Active"
-        : "Activate";
+      : isActive
+        ? ""
+        : '<svg aria-hidden="true"><use href="#icon-play"></use></svg><span>Start</span>';
+    activationButton.hidden = isActive;
     activationButton.disabled = Boolean(programme.isDraft);
     activationButton.setAttribute(
       "aria-pressed",
@@ -1190,22 +1251,7 @@ function renderLibrary() {
       if (programme.isDraft) return;
       requestProgrammeActivation(programme.id);
     });
-    card.appendChild(activationButton);
-
-    if (programme.id === activeId) {
-      const week = programme.weeks?.[programme.currentWeek - 1];
-      const days = week?.trainingDays || [];
-      const remaining = getRemainingWorkouts(programme, week, history);
-      const completed = days.length - remaining.length;
-      const percentage = days.length
-        ? Math.round((completed / days.length) * 100)
-        : 0;
-
-      const status = document.createElement("span");
-      status.className = "status-label";
-      status.textContent = `${percentage}% complete`;
-      card.appendChild(status);
-    }
+    if (!isActive) card.appendChild(activationButton);
 
     card.addEventListener("click", event => {
       if (event.target.closest(".programme-activation-button")) return;
@@ -1254,6 +1300,41 @@ function createCompletedWeekCard(programme, week, history) {
   const card = document.createElement("section");
   card.className = "card workouts-week-complete";
   card.innerHTML = `<header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${week.number}</small><h2>Week Complete</h2></div></header><div class="workouts-week-statistics"><span><strong>${stats.workouts}/${stats.planned}</strong><small>Workouts</small></span><span><strong>${stats.minutes}</strong><small>Minutes</small></span><span><strong>${stats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${stats.sets}</strong><small>Sets</small></span><span><strong>${stats.effort ? stats.effort.toFixed(1) : "—"}</strong><small>Avg effort</small></span></div>`;
+  return card;
+}
+
+function completedSessionsForWeek(programme, week, history) {
+  return history
+    .filter(session =>
+      session.programmeId === programme.id &&
+      (session.weekId && week.id
+        ? session.weekId === week.id
+        : Number(session.weekNumber) === Number(week.number))
+    )
+    .sort((a, b) => new Date(a.finishedAt) - new Date(b.finishedAt));
+}
+
+function createCompletedWorkoutReviewCard(session) {
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "card completed-workout-review-card";
+  const start = new Date(session.startedAt).getTime();
+  const finish = new Date(session.finishedAt).getTime();
+  const minutes = Number.isFinite(start) && Number.isFinite(finish)
+    ? Math.max(0, Math.round((finish - start) / 60000))
+    : 0;
+  const sets = (session.exercises || []).reduce((total, exercise) =>
+    total + (exercise.sets || []).filter(set =>
+      set.completed || (set.weight !== "" && set.reps !== "")
+    ).length, 0);
+  card.innerHTML = `
+    <span><strong>${formatSpotTitle(session.workoutName)}</strong><small>${minutes} min · ${sets} sets</small></span>
+    <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>`;
+  card.addEventListener("click", () => {
+    if (typeof openCompletedWorkoutReview === "function") {
+      openCompletedWorkoutReview(session);
+    }
+  });
   return card;
 }
 
@@ -1431,6 +1512,13 @@ function renderActiveWorkout() {
 
   if (remaining.length === 0) {
     container.appendChild(createCompletedWeekCard(programme, week, history));
+    const completedHeading = document.createElement("h2");
+    completedHeading.className = "workout-group-heading";
+    completedHeading.textContent = "Completed Workouts";
+    container.appendChild(completedHeading);
+    completedSessionsForWeek(programme, week, history).forEach(session =>
+      container.appendChild(createCompletedWorkoutReviewCard(session))
+    );
     return;
   }
 

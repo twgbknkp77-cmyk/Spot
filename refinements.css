@@ -602,6 +602,16 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 .session-exercise-dialog input:focus,.session-exercise-dialog select:focus,.session-exercise-dialog textarea:focus { border-color:#5b5b5b;box-shadow:none; }
 .session-exercise-form-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
 .session-exercise-dialog .modal-actions { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px; }
+.session-field-wide { grid-column:1 / -1; }
+.session-change-scope {
+  display:grid;gap:9px;margin:2px 0 0;padding:14px;background:#191919;border:1px solid #3f3f3f;border-radius:14px;
+}
+.session-change-scope legend { padding:0 6px;color:var(--grey);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em; }
+.session-change-scope label { display:flex;align-items:center;gap:10px;min-height:34px;color:var(--white); }
+.session-change-scope input { width:18px;height:18px;margin:0;accent-color:var(--orange); }
+.session-scope-dialog .stacked-dialog-actions { display:grid;gap:12px;margin-top:16px; }
+.session-scope-dialog .stacked-dialog-actions button { width:100%;min-height:48px; }
+.session-edit-panel .danger-text-button { color:#ef6666; }
 .session-edit-panel button + button { border-top:1px solid #383838; }
 .performance-plot { position:relative;width:100%;aspect-ratio:340 / 190; }
 .performance-plot svg { position:absolute;inset:0;width:100%;height:100%; }
@@ -670,6 +680,57 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   transition:color 180ms ease,fill 180ms ease,stroke 180ms ease,transform 180ms ease;
 }
 .exercise-star-button:active svg { transform:scale(.9); }
+
+/* Programme library: block-wide progress and compact activation controls. */
+.programme-card.active-programme {
+  position:relative;
+  padding:18px !important;
+  background:#1b1b1b !important;
+  border:1.5px solid var(--orange) !important;
+  box-shadow:0 0 0 1px rgba(255,140,0,.1),0 10px 28px rgba(255,140,0,.08) !important;
+}
+.programme-progress-badge {
+  display:inline-flex;align-items:center;width:max-content;margin:0 0 17px;padding:6px 10px;
+  color:var(--orange);background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.38);
+  border-radius:999px;font-size:11px;font-weight:850;letter-spacing:.04em;text-transform:uppercase;
+}
+.programme-card.active-programme > .compact-card-header { margin-bottom:20px; }
+.programme-card.active-programme .programme-card-chevron {
+  width:38px;height:38px;background:#242424;border-color:rgba(255,140,0,.48);border-radius:11px;
+}
+.programme-block-progress { display:grid;gap:9px; }
+.programme-block-progress > strong { color:var(--orange);font-size:30px;line-height:1; }
+.programme-block-progress > small { color:var(--grey);font-size:12px; }
+.programme-block-progress-track { height:8px;overflow:hidden;background:#343434;border-radius:999px; }
+.programme-block-progress-track > span {
+  display:block;height:100%;background:var(--orange);border-radius:inherit;
+  transition:width 450ms cubic-bezier(.2,.8,.2,1);
+}
+.programme-card-footer {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:18px;padding-top:15px;border-top:1px solid #353535;
+}
+.programme-card-footer > span { color:var(--grey);font-size:13px;font-weight:650; }
+.programme-deactivate-button {
+  min-height:36px;padding:7px 12px;color:var(--orange);background:transparent;
+  border:1px solid rgba(255,140,0,.5);border-radius:10px;font-size:12px;font-weight:800;
+}
+.programme-activation-button:not(.is-active) {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;min-height:38px;
+  margin-top:14px;padding:8px 14px;
+}
+.programme-activation-button svg { width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2; }
+
+.completed-workout-review-card {
+  display:grid;grid-template-columns:minmax(0,1fr) 26px;align-items:center;gap:14px;
+  width:100%;margin:0 0 12px;padding:17px 18px;color:var(--white);text-align:left;
+}
+.completed-workout-review-card > span { display:grid;gap:5px; }
+.completed-workout-review-card strong { font-size:17px; }
+.completed-workout-review-card small { color:var(--grey);font-size:13px; }
+.completed-workout-review-card svg {
+  width:22px;height:22px;color:var(--orange);fill:none;stroke:currentColor;stroke-width:2.2;
+}
 
 /* Centred single-action dialogs. */
 .decision-dialog-actions:has(> button:only-child),

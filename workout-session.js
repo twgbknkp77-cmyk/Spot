@@ -182,7 +182,7 @@ function saveFinishedWeekDashboardState(session) {
   localStorage.setItem("spot_finished_week_state_v1",JSON.stringify({programmeId:session.programmeId,weekNumber:session.weekNumber,completedAt:session.finishedAt,expiresAt:nextMondayStart().toISOString(),...stats}));
 }
 
-function renderWorkoutCompletionSummary(session, previousSession, progression) {
+function renderWorkoutCompletionSummary(session, previousSession, progression, options = {}) {
   const container = document.getElementById("workoutCompletionSummary");
   if (!container) return;
   const duration = completedSessionDuration(session);
@@ -227,7 +227,7 @@ function renderWorkoutCompletionSummary(session, previousSession, progression) {
     ${weekStats?`<div class="card week-complete-summary"><header><span class="completion-check-small"><svg aria-hidden="true"><use href="#icon-check-smooth"></use></svg></span><div><small>Week ${session.weekNumber}</small><h2>Week Complete</h2></div></header><div><span><strong>${weekStats.workouts}/${weekStats.planned}</strong><small>Workouts</small></span><span><strong>${weekStats.minutes}</strong><small>Minutes</small></span><span><strong>${weekStats.volume.toLocaleString()}</strong><small>Volume kg</small></span><span><strong>${weekStats.sets}</strong><small>Sets</small></span><span><strong>${weekStats.effort?weekStats.effort.toFixed(1):"—"}</strong><small>Avg effort</small></span></div></div>`:""}
     <div class="card completion-xp-card${levelUp ? " level-up" : ""}"><div><small>${levelUp ? "Level up" : "Training XP"}</small><strong>${levelUp ? `Level ${levelState.level}` : `+${xpEarned.toLocaleString("en-GB")} XP`}</strong></div><span>${levelState.remaining.toLocaleString("en-GB")} / ${levelState.required.toLocaleString("en-GB")} XP</span><div class="completion-xp-track"><i style="--xp-progress:${Math.min(100,levelState.percentage)}%"></i></div></div>
     <p class="completion-insight">${insight}</p><p class="completion-next">${next}</p>
-    ${(session.sessionChanges || []).length ? `<button type="button" id="applySessionChanges" class="completion-programme-update">Save session changes to programme</button>` : ""}
+    ${!options.review && (session.sessionChanges || []).length ? `<button type="button" id="applySessionChanges" class="completion-programme-update">Save session changes to programme</button>` : ""}
     <button type="button" id="closeWorkoutSummary" class="primary-button">Done</button>`;
   document.getElementById("applySessionChanges")?.addEventListener("click", async event => {
     const button = event.currentTarget;
@@ -238,14 +238,34 @@ function renderWorkoutCompletionSummary(session, previousSession, progression) {
     if (typeof renderLibrary === "function") renderLibrary();
     if (typeof renderActiveWorkout === "function") renderActiveWorkout();
   });
-  document.getElementById("closeWorkoutSummary")?.addEventListener("click", () => { spotHaptic(18); showPage("workouts"); });
+  document.getElementById("closeWorkoutSummary")?.addEventListener("click", () => {
+    spotHaptic(18);
+    if (typeof renderActiveWorkout === "function") renderActiveWorkout();
+    showPage(options.returnPage || "workouts");
+  });
   showPage("workoutComplete");
   requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
-  spotHaptic([45,35,80]);
+  if (!options.review) spotHaptic([45,35,80]);
   container.querySelectorAll("[data-completion-value]").forEach(element => {
     const target=Number(element.dataset.completionValue)||0;if(!target&&element.textContent==="—")return;
     const decimals=Number(element.dataset.completionDecimals)||0,suffix=element.dataset.completionSuffix||"",start=performance.now();
     const draw=now=>{const progress=Math.min((now-start)/650,1),value=target*(1-Math.pow(1-progress,3));element.textContent=value.toLocaleString("en-GB",{minimumFractionDigits:decimals,maximumFractionDigits:decimals})+suffix;if(progress<1)requestAnimationFrame(draw)};requestAnimationFrame(draw);
+  });
+}
+
+function openCompletedWorkoutReview(session) {
+  if (!session) return;
+  const history = getWorkoutSessionHistory()
+    .filter(item => new Date(item.finishedAt).getTime() < new Date(session.finishedAt).getTime())
+    .sort((a, b) => new Date(b.finishedAt) - new Date(a.finishedAt));
+  const previous = history.find(item =>
+    item.programmeId === session.programmeId &&
+    (item.workoutId === session.workoutId ||
+      sessionExerciseName(item.workoutName) === sessionExerciseName(session.workoutName))
+  ) || null;
+  renderWorkoutCompletionSummary(session, previous, { advanced:false }, {
+    review:true,
+    returnPage:"workouts"
   });
 }
 
@@ -611,13 +631,22 @@ function applySessionChangesToProgramme(session) {
   if (!programme) return false;
   const normalise = value => String(value || "").trim().toLowerCase();
   (programme.weeks || []).forEach(week => {
-    if (Number(week.number) < Number(session.weekNumber)) return;
+    const weekNumber = Number(week.number);
+    const sessionWeek = Number(session.weekNumber);
+    const appliesToWeek = changes.some(change =>
+      change.scope === "current"
+        ? weekNumber === sessionWeek
+        : weekNumber >= sessionWeek
+    );
+    if (!appliesToWeek) return;
     const day = (week.trainingDays || []).find(item =>
       normalise(item.name) === normalise(session.workoutName)
     );
     if (!day) return;
     day.exercises ||= [];
     changes.forEach(change => {
+      if (change.scope === "current" && weekNumber !== sessionWeek) return;
+      if (change.scope !== "current" && weekNumber < sessionWeek) return;
       const matches = item =>
         (change.originalTrackingId && item.trackingId === change.originalTrackingId) ||
         (change.originalId && item.id === change.originalId) ||
@@ -625,10 +654,27 @@ function applySessionChangesToProgramme(session) {
       if (change.type === "remove") day.exercises = (day.exercises || []).filter(item => !matches(item));
       if (change.type === "replace") {
         const index = (day.exercises || []).findIndex(matches);
-        if (index >= 0) day.exercises[index] = { ...change.exercise, id: createId() };
+        if (index >= 0) {
+          const [removed] = day.exercises.splice(index, 1);
+          const requestedPosition = Number(change.position);
+          const target = Math.max(0, Math.min(
+            Number.isFinite(requestedPosition) ? requestedPosition : index,
+            day.exercises.length
+          ));
+          day.exercises.splice(target, 0, { ...change.exercise, id: removed?.id || createId() });
+        }
       }
       if (change.type === "add" && !(day.exercises || []).some(item => item.trackingId === change.exercise.trackingId)) {
-        day.exercises.push({ ...change.exercise, id: createId() });
+        const target = Math.max(0, Math.min(Number(change.position) || 0, day.exercises.length));
+        day.exercises.splice(target, 0, { ...change.exercise, id: createId() });
+      }
+      if (change.type === "reorder") {
+        const index = day.exercises.findIndex(matches);
+        if (index >= 0) {
+          const [moved] = day.exercises.splice(index, 1);
+          const target = Math.max(0, Math.min(Number(change.position) || 0, day.exercises.length));
+          day.exercises.splice(target, 0, moved);
+        }
       }
     });
   });
@@ -639,6 +685,7 @@ function applySessionChangesToProgramme(session) {
 function openSessionExerciseDialog(index = null) {
   if (!currentSession) return;
   const dialog = document.getElementById("sessionExerciseDialog");
+  if (!dialog) return;
   const exercise = Number.isInteger(index) ? currentSession.exercises[index] : null;
   document.getElementById("sessionExerciseDialogTitle").textContent = exercise ? "Replace Exercise" : "Add Exercise";
   document.getElementById("sessionExerciseIndex").value = exercise ? String(index) : "";
@@ -649,8 +696,55 @@ function openSessionExerciseDialog(index = null) {
   document.getElementById("sessionExerciseWeight").value = exercise?.targetWeight || "";
   document.getElementById("sessionExerciseDuration").value = exercise?.targetDurationMinutes || "";
   document.getElementById("sessionExerciseNote").value = exercise?.note || "";
+  const position = document.getElementById("sessionExercisePosition");
+  position.innerHTML = "";
+  const optionCount = currentSession.exercises.length + (exercise ? 0 : 1);
+  for (let item = 0; item < optionCount; item += 1) {
+    const option = document.createElement("option");
+    option.value = String(item);
+    option.textContent = `Position ${item + 1}`;
+    position.appendChild(option);
+  }
+  position.value = String(exercise ? index : currentSession.exercises.length);
+  document.querySelector('input[name="sessionExerciseScope"][value="current"]').checked = true;
   updateSessionExerciseTypeFields();
   dialog.showModal();
+}
+
+function renderWorkoutSessionInPlace() {
+  const scrollTop = window.scrollY;
+  const container = document.getElementById("sessionExercises");
+  renderWorkoutSession();
+  window.scrollTo(0, scrollTop);
+  container?.animate(
+    [{ opacity: .82, transform: "translateY(5px)" }, { opacity: 1, transform: "translateY(0)" }],
+    { duration: 180, easing: "cubic-bezier(.2,.8,.2,1)" }
+  );
+}
+
+function chooseSessionChangeScope() {
+  const dialog = document.getElementById("sessionScopeDialog");
+  if (!dialog) return Promise.resolve("current");
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      dialog.close();
+      resolve(value);
+    };
+    document.getElementById("sessionScopeCurrent").onclick = () => finish("current");
+    document.getElementById("sessionScopeRemaining").onclick = () => finish("remaining");
+    document.getElementById("sessionScopeCancel").onclick = () => finish(null);
+    dialog.oncancel = event => { event.preventDefault(); finish(null); };
+    dialog.showModal();
+  });
+}
+
+function commitLiveSessionChange(change) {
+  applySessionChangesToProgramme({ ...currentSession, sessionChanges: [change] });
+  saveActiveWorkoutSession();
+  if (typeof renderLibrary === "function") renderLibrary();
 }
 
 function updateSessionExerciseTypeFields() {
@@ -667,6 +761,8 @@ document.getElementById("sessionExerciseForm")?.addEventListener("submit", event
   const indexValue = document.getElementById("sessionExerciseIndex").value;
   const index = indexValue === "" ? null : Number(indexValue);
   const existing = Number.isInteger(index) ? currentSession.exercises[index] : null;
+  const position = Number(document.getElementById("sessionExercisePosition").value) || 0;
+  const scope = document.querySelector('input[name="sessionExerciseScope"]:checked')?.value || "current";
   const type = document.getElementById("sessionExerciseType").value;
   const repTarget = document.getElementById("sessionExerciseReps").value.trim() || "1";
   const targetSets = Math.max(1, Number(document.getElementById("sessionExerciseSets").value) || 1);
@@ -682,17 +778,18 @@ document.getElementById("sessionExerciseForm")?.addEventListener("submit", event
     durationMinutes: type === "cardio" ? "" : undefined,
     sets: type === "cardio" ? [] : Array.from({ length: targetSets }, () => createSessionSet(Number(document.getElementById("sessionExerciseWeight").value) || 0, parseExerciseRepTarget(repTarget)?.min || 1, repTarget))
   };
-  currentSession.sessionChanges ||= [];
+  let change;
   if (existing) {
-    currentSession.sessionChanges.push({ type: "replace", originalId: existing.id, originalTrackingId: existing.trackingId, originalName: existing.name, exercise: sessionExerciseProgrammeShape(exercise) });
-    currentSession.exercises[index] = exercise;
+    currentSession.exercises.splice(index, 1);
+    currentSession.exercises.splice(Math.min(position, currentSession.exercises.length), 0, exercise);
+    change = { type: "replace", scope, position, originalId: existing.id, originalTrackingId: existing.trackingId, originalName: existing.name, exercise: sessionExerciseProgrammeShape(exercise) };
   } else {
-    currentSession.exercises.push(exercise);
-    currentSession.sessionChanges.push({ type: "add", exercise: sessionExerciseProgrammeShape(exercise) });
+    currentSession.exercises.splice(Math.min(position, currentSession.exercises.length), 0, exercise);
+    change = { type: "add", scope, position, exercise: sessionExerciseProgrammeShape(exercise) };
   }
-  saveActiveWorkoutSession();
+  commitLiveSessionChange(change);
   document.getElementById("sessionExerciseDialog").close();
-  renderWorkoutSession();
+  renderWorkoutSessionInPlace();
 });
 
 
@@ -944,7 +1041,7 @@ function renderWorkoutSession() {
   const container = document.getElementById("sessionExercises");
   container.innerHTML = "";
 
-  currentSession.exercises.forEach(exercise => {
+  currentSession.exercises.forEach((exercise, exerciseIndex) => {
     exercise.starred = currentSessionExerciseIsStarred(exercise);
     const card = document.createElement("div");
     card.className = "card session-exercise-card";
@@ -1057,20 +1154,95 @@ function renderWorkoutSession() {
           last?.plannedRepTarget || String(last?.plannedReps ?? last?.reps ?? 1)
         )
       );
-      renderWorkoutSession();
+      renderWorkoutSessionInPlace();
     });
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.textContent = "Remove last set";
     removeButton.disabled = exercise.sets.length <= 1;
+    addButton.hidden = exercise.type === "cardio";
+    removeButton.hidden = exercise.type === "cardio";
     removeButton.addEventListener("click", () => {
       if (exercise.sets.length <= 1) return;
       exercise.sets.pop();
-      renderWorkoutSession();
+      renderWorkoutSessionInPlace();
     });
 
-    menuPanel.append(addButton, removeButton);
+    const changeButton = document.createElement("button");
+    changeButton.type = "button";
+    changeButton.textContent = "Change Exercise";
+    changeButton.addEventListener("click", () => {
+      menu.open = false;
+      openSessionExerciseDialog(exerciseIndex);
+    });
+
+    const moveUpButton = document.createElement("button");
+    moveUpButton.type = "button";
+    moveUpButton.textContent = "Move Up";
+    moveUpButton.disabled = exerciseIndex === 0;
+    moveUpButton.addEventListener("click", async () => {
+      if (exerciseIndex === 0) return;
+      const scope = await chooseSessionChangeScope();
+      if (!scope) return;
+      currentSession.exercises.splice(exerciseIndex, 1);
+      currentSession.exercises.splice(exerciseIndex - 1, 0, exercise);
+      commitLiveSessionChange({
+        type: "reorder", scope, position: exerciseIndex - 1,
+        originalId: exercise.id, originalTrackingId: exercise.trackingId, originalName: exercise.name
+      });
+      renderWorkoutSessionInPlace();
+    });
+
+    const moveDownButton = document.createElement("button");
+    moveDownButton.type = "button";
+    moveDownButton.textContent = "Move Down";
+    moveDownButton.disabled = exerciseIndex === currentSession.exercises.length - 1;
+    moveDownButton.addEventListener("click", async () => {
+      if (exerciseIndex >= currentSession.exercises.length - 1) return;
+      const scope = await chooseSessionChangeScope();
+      if (!scope) return;
+      currentSession.exercises.splice(exerciseIndex, 1);
+      currentSession.exercises.splice(exerciseIndex + 1, 0, exercise);
+      commitLiveSessionChange({
+        type: "reorder", scope, position: exerciseIndex + 1,
+        originalId: exercise.id, originalTrackingId: exercise.trackingId, originalName: exercise.name
+      });
+      renderWorkoutSessionInPlace();
+    });
+
+    const deleteExerciseButton = document.createElement("button");
+    deleteExerciseButton.type = "button";
+    deleteExerciseButton.className = "danger-text-button";
+    deleteExerciseButton.textContent = "Remove Exercise";
+    deleteExerciseButton.addEventListener("click", async () => {
+      menu.open = false;
+      const hasResults = exercise.type === "cardio"
+        ? Number(exercise.durationMinutes) > 0
+        : (exercise.sets || []).some(set => set.weight !== "" || set.reps !== "");
+      if (hasResults && !await showSpotConfirm(
+        "Remove this exercise?",
+        "The results entered for this exercise will be removed from this session.",
+        { confirmText: "Remove", cancelText: "Cancel", danger: true }
+      )) return;
+      const scope = await chooseSessionChangeScope();
+      if (!scope) return;
+      currentSession.exercises.splice(exerciseIndex, 1);
+      commitLiveSessionChange({
+        type: "remove", scope,
+        originalId: exercise.id, originalTrackingId: exercise.trackingId, originalName: exercise.name
+      });
+      renderWorkoutSessionInPlace();
+    });
+
+    menuPanel.append(
+      addButton,
+      removeButton,
+      changeButton,
+      moveUpButton,
+      moveDownButton,
+      deleteExerciseButton
+    );
     menu.append(summary, menuPanel);
     card.append(collapsedButton, titleRow);
 
@@ -1244,8 +1416,7 @@ function renderWorkoutSession() {
     card.appendChild(effort);
 
     actionRow.appendChild(completeButton);
-    if (exercise.type !== "cardio") actionRow.appendChild(menu);
-    else actionRow.classList.add("single-action");
+    actionRow.appendChild(menu);
     card.appendChild(actionRow);
 
     container.appendChild(card);
@@ -1398,6 +1569,10 @@ document
 
     if (typeof renderActiveWorkout === "function") {
       renderActiveWorkout();
+    }
+
+    if (typeof renderLibrary === "function") {
+      renderLibrary();
     }
 
     if (typeof updateDashboard === "function") {
