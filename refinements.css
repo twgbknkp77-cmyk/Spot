@@ -685,28 +685,28 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 /* Programme library: block-wide progress and compact activation controls. */
 .programme-card.active-programme {
   position:relative;
-  padding:16px 18px !important;
+  padding:14px 18px !important;
   background:#1b1b1b !important;
   border:1.5px solid var(--orange) !important;
   box-shadow:0 8px 22px rgba(0,0,0,.22) !important;
 }
 .programme-card.active-programme > .compact-card-header {
-  grid-template-columns:minmax(0,1fr) auto !important;align-items:start;margin-bottom:14px;
+  grid-template-columns:minmax(0,1fr) auto !important;align-items:start;margin-bottom:10px;
 }
 .programme-percentage-badge {
   display:grid;place-items:center;min-width:56px;min-height:36px;padding:6px 10px;
   color:var(--orange);background:rgba(255,140,0,.08);border:1px solid rgba(255,140,0,.42);
   border-radius:11px;font-size:16px;font-weight:850;
 }
-.programme-block-progress { display:grid;gap:6px; }
-.programme-block-progress-track { height:13px;overflow:hidden;background:#343434;border-radius:999px; }
+.programme-block-progress { display:grid;gap:4px; }
+.programme-block-progress-track { height:18px;overflow:hidden;background:#343434;border-radius:999px; }
 .programme-block-progress-track > span {
   display:block;height:100%;background:var(--orange);border-radius:inherit;
   transition:width 450ms cubic-bezier(.2,.8,.2,1);
 }
 .programme-card-footer {
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin-top:14px;padding-top:0;border-top:0;
+  margin-top:10px;padding-top:0;border-top:0;
 }
 .programme-card-footer > span { display:flex;flex-wrap:wrap;gap:5px 12px;color:var(--grey);font-size:13px;font-weight:650; }
 .programme-card-footer > span span:first-child { color:var(--white); }
@@ -736,17 +736,22 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 
 /* Measurements: profile-style summary and compact rows. */
-.measurements-header { grid-template-columns:52px minmax(0,1fr) 52px !important;align-items:center; }
+.measurements-header {
+  display:grid !important;grid-template-columns:52px minmax(0,1fr) 52px !important;
+  align-items:center;width:100%;
+}
 .measurements-header h1 { margin:0; }
+.measurements-header #measurementsAddWeight { justify-self:end; }
 #measurementsSummary { margin-bottom:16px; }
 .measurements-summary-card {
-  display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;gap:14px;padding:18px !important;
+  display:grid;grid-template-columns:58px minmax(0,1fr) minmax(128px,auto);align-items:center;gap:14px;padding:18px !important;
 }
 .measurements-summary-card > div { display:grid;gap:3px; }
 .measurements-summary-card small { color:var(--grey);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase; }
 .measurements-summary-card strong { font-size:27px;line-height:1.1; }
 .measurements-summary-card span { color:var(--grey);font-size:13px; }
-.measurements-summary-card > p { grid-column:2;margin:4px 0 0;color:var(--orange);font-size:13px;font-weight:750; }
+.measurements-summary-meta { justify-items:end;text-align:right; }
+.measurements-summary-meta p { margin:2px 0 0;color:var(--orange);font-size:13px;font-weight:750; }
 #measurementsList { display:grid !important;gap:12px !important; }
 #measurementsList .measurement-card {
   display:grid !important;grid-template-columns:minmax(0,1fr) auto !important;align-items:center !important;
@@ -771,13 +776,37 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   padding:0 !important;color:var(--orange) !important;background:transparent !important;border:0 !important;border-radius:10px !important;
 }
 .session-edit-trigger svg { width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2; }
+.session-exercise-title .session-edit-panel {
+  position:fixed !important;z-index:2200 !important;right:auto !important;bottom:auto !important;
+  width:min(230px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow-y:auto;
+}
 .session-exercise-actions { grid-template-columns:minmax(0,1fr) auto !important;align-items:center; }
 .session-exercise-actions .exercise-complete-button {
   grid-column:2;width:auto !important;min-width:78px !important;min-height:40px !important;margin:0 !important;padding:8px 15px !important;
-  color:var(--orange) !important;background:transparent !important;border:1px solid rgba(255,140,0,.42) !important;border-radius:11px !important;
+  color:#111 !important;background:var(--orange) !important;border:1px solid var(--orange) !important;border-radius:11px !important;
   transition:transform 120ms ease,background 160ms ease !important;
 }
-.session-exercise-actions .exercise-complete-button:active { transform:scale(.96);background:rgba(255,140,0,.08) !important; }
+.session-exercise-actions .exercise-complete-button:active { transform:scale(.96);background:#e67e00 !important; }
+
+.overview-deactivate-button {
+  display:block;width:100%;min-height:48px;margin:20px 0 0;color:#ef6666;background:transparent;
+  border:1px solid rgba(239,102,102,.55);border-radius:14px;font-weight:800;
+}
+.programme-card.active-programme { animation:programme-card-arrive 280ms cubic-bezier(.2,.8,.2,1) both; }
+@keyframes programme-card-arrive {
+  from { opacity:.55;transform:translateY(8px); }
+  to { opacity:1;transform:translateY(0); }
+}
+.programme-block-progress-track > span { animation:programme-progress-grow 520ms cubic-bezier(.2,.8,.2,1) both;transform-origin:left; }
+@keyframes programme-progress-grow { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+.workout-summary-card.next-workout > .compact-card-header,
+.workout-summary-card.next-workout > .compact-card-header > div { align-self:center !important; }
+.workout-summary-card.next-workout h3 { margin-top:0;margin-bottom:5px; }
+@media (max-width:480px) {
+  .measurements-summary-card { grid-template-columns:48px minmax(0,1fr) minmax(108px,auto);gap:10px;padding:16px !important; }
+  .measurements-summary-card strong { font-size:23px; }
+  .measurements-summary-meta span,.measurements-summary-meta p { font-size:12px; }
+}
 .dashboard-next-row { grid-template-columns:minmax(0,1fr) 94px !important; }
 .next-workout-start { min-height:42px !important;margin:20px 14px 20px 0 !important;padding:9px 12px !important; }
 .session-cardio-row { display:grid !important;gap:14px !important; }

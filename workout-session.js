@@ -813,6 +813,27 @@ document.addEventListener("pointerdown", event => {
   });
 });
 
+function positionSessionEditPanel(menu, panel) {
+  if (!menu?.open || !panel) return;
+  const rect = menu.querySelector("summary")?.getBoundingClientRect();
+  if (!rect) return;
+  const gap = 8;
+  const viewportPadding = 12;
+  const panelHeight = panel.offsetHeight;
+  const panelWidth = panel.offsetWidth;
+  const roomBelow = window.innerHeight - rect.bottom - viewportPadding;
+  const openBelow = roomBelow >= panelHeight || rect.top < panelHeight + viewportPadding;
+  const top = openBelow
+    ? Math.min(rect.bottom + gap, window.innerHeight - panelHeight - viewportPadding)
+    : Math.max(viewportPadding, rect.top - panelHeight - gap);
+  const left = Math.min(
+    window.innerWidth - panelWidth - viewportPadding,
+    Math.max(viewportPadding, rect.right - panelWidth)
+  );
+  panel.style.top = `${top}px`;
+  panel.style.left = `${left}px`;
+}
+
 
 // DISPLAY WORKOUT SESSION
 function renderWorkoutSessionLegacy() {
@@ -1155,7 +1176,11 @@ function renderWorkoutSession() {
 
     const menu = document.createElement("details");
     menu.className = "session-edit-menu";
-    menu.addEventListener("toggle", () => { if (menu.open) spotHaptic(10); });
+    menu.addEventListener("toggle", () => {
+      if (!menu.open) return;
+      spotHaptic(10);
+      requestAnimationFrame(() => positionSessionEditPanel(menu, menuPanel));
+    });
 
     const summary = document.createElement("summary");
     summary.innerHTML = '<svg aria-hidden="true"><use href="#icon-edit"></use></svg>';

@@ -57,6 +57,24 @@ function renderProgrammeOverview() {
   appendGroup("Completed",completed);
   if(!list.children.length) list.innerHTML="<div class='card empty-state-card'><p>No training days yet. Use Edit to add one.</p></div>";
   container.appendChild(list);
+
+  if (programme.id === getActiveProgrammeId()) {
+    const deactivate = document.createElement("button");
+    deactivate.type = "button";
+    deactivate.className = "overview-deactivate-button";
+    deactivate.textContent = "Deactivate Programme";
+    deactivate.addEventListener("click", async () => {
+      const confirmed = await showSpotConfirm(
+        "Deactivate this programme?",
+        "Your completed workouts, history and programme progress will remain saved.",
+        { confirmText: "Deactivate", cancelText: "Cancel", danger: true }
+      );
+      if (!confirmed) return;
+      deactivateProgramme(programme.id);
+      showPage("library");
+    });
+    container.appendChild(deactivate);
+  }
 }
 
 document.getElementById("programmeOverviewBack")?.addEventListener("click",()=>showPage("library"));

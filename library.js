@@ -1218,15 +1218,7 @@ function renderLibrary() {
       footer.className = "programme-card-footer";
       const weekIndicator = document.createElement("span");
       weekIndicator.innerHTML = `<span>Week ${programme.currentWeek} of ${programme.durationWeeks}</span><span>${progress.completed} of ${progress.total} workouts</span>`;
-      const deactivate = document.createElement("button");
-      deactivate.type = "button";
-      deactivate.className = "programme-deactivate-button";
-      deactivate.textContent = "Deactivate";
-      deactivate.addEventListener("click", event => {
-        event.stopPropagation();
-        requestProgrammeActivation(programme.id);
-      });
-      footer.append(weekIndicator, deactivate);
+      footer.append(weekIndicator);
       card.appendChild(footer);
     }
 

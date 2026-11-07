@@ -82,11 +82,13 @@ function renderMeasurements() {
           <div>
             <small>Latest Bodyweight</small>
             <strong>${latest.weight.toFixed(1)} kg</strong>
+          </div>
+          <div class="measurements-summary-meta">
             <span>${new Date(`${latest.date}T12:00:00`).toLocaleDateString("en-GB", {
               day: "numeric", month: "long", year: "numeric"
             })}</span>
+            <p>${change === null ? "First measurement" : `${change >= 0 ? "+" : ""}${change.toFixed(1)} kg from previous`}</p>
           </div>
-          <p>${change === null ? "First measurement" : `${change >= 0 ? "+" : ""}${change.toFixed(1)} kg from previous`}</p>
         </article>
       `;
     }
