@@ -1190,7 +1190,8 @@ function renderLibrary() {
       programme.isDraft
         ? `Draft • ${programme.durationWeeks} weeks`
         : `${programme.durationWeeks} weeks • Week ${programme.currentWeek}`;
-    copy.append(title, details);
+    copy.appendChild(title);
+    if (!isActive) copy.appendChild(details);
 
     const controls = document.createElement("div");
     controls.className = "programme-card-controls";
@@ -1211,15 +1212,15 @@ function renderLibrary() {
       const progressTrack = document.createElement("div");
       progressTrack.className = "programme-block-progress-track";
       progressTrack.innerHTML = `<span style="width:${progress.percentage}%"></span>`;
-      progressSection.append(progressTrack);
-      card.appendChild(progressSection);
-
       const footer = document.createElement("footer");
       footer.className = "programme-card-footer";
       const weekIndicator = document.createElement("span");
       weekIndicator.innerHTML = `<span>Week ${programme.currentWeek} of ${programme.durationWeeks}</span><span>${progress.completed} of ${progress.total} workouts</span>`;
       footer.append(weekIndicator);
       card.appendChild(footer);
+
+      progressSection.append(progressTrack);
+      card.appendChild(progressSection);
     }
 
     const activationButton = document.createElement("button");

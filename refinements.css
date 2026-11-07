@@ -708,9 +708,12 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 .programme-card-footer {
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin-top:8px;padding-top:0;border-top:0;
+  margin:2px 0 9px;padding-top:0;border-top:0;
 }
-.programme-card-footer > span { display:flex;flex-wrap:wrap;gap:5px 12px;color:var(--grey);font-size:13px;font-weight:650; }
+.programme-card-footer > span {
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  width:100%;gap:5px 12px;color:var(--grey);font-size:13px;font-weight:650;
+}
 .programme-card-footer > span span:first-child { color:var(--white); }
 .programme-deactivate-button {
   min-height:38px;padding:8px 14px;color:#111;background:var(--orange);
@@ -852,7 +855,8 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 #sessionExerciseDialog select,
 #sessionExerciseDialog textarea {
   box-sizing:border-box;width:100%;min-width:0;min-height:48px;margin:0 0 6px;padding:12px 14px;
-  color:var(--white);background:#292929;border:1px solid #494949;border-radius:12px;font:inherit;
+  color:var(--white);background:#292929;border:1px solid #494949;border-radius:12px;
+  font-family:inherit;font-size:16px;line-height:1.25;
   color-scheme:dark;outline:none;transition:border-color 150ms ease,box-shadow 150ms ease;
 }
 #sessionExerciseDialog input:focus,
@@ -861,10 +865,14 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,140,0,.16);
 }
 #sessionExerciseDialog textarea { min-height:88px;resize:vertical;line-height:1.45; }
+#sessionStrengthFields[hidden],#sessionCardioFields[hidden] { display:none !important; }
 #sessionExerciseDialog .modal-actions {
   display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;
 }
 #sessionExerciseDialog .modal-actions button { width:100%;min-height:48px;margin:0; }
+#sessionScopeRemaining {
+  color:var(--orange);border:1px solid rgba(255,140,0,.58);background:rgba(255,140,0,.06);
+}
 .dashboard-next-row { grid-template-columns:minmax(0,1fr) 94px !important; }
 .next-workout-start { min-height:42px !important;margin:20px 14px 20px 0 !important;padding:9px 12px !important; }
 .session-cardio-row { display:grid !important;gap:14px !important; }

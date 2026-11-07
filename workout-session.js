@@ -720,6 +720,7 @@ function openSessionExerciseDialog(index = null) {
   position.value = String(exercise ? index : currentSession.exercises.length);
   updateSessionExerciseTypeFields();
   dialog.showModal();
+  dialog.focus({ preventScroll: true });
 }
 
 function renderWorkoutSessionInPlace() {
