@@ -718,7 +718,6 @@ function openSessionExerciseDialog(index = null) {
     position.appendChild(option);
   }
   position.value = String(exercise ? index : currentSession.exercises.length);
-  document.querySelector('input[name="sessionExerciseScope"][value="current"]').checked = true;
   updateSessionExerciseTypeFields();
   dialog.showModal();
 }
@@ -768,13 +767,12 @@ function updateSessionExerciseTypeFields() {
 document.getElementById("addSessionExercise")?.addEventListener("click", () => openSessionExerciseDialog());
 document.getElementById("sessionExerciseType")?.addEventListener("change", updateSessionExerciseTypeFields);
 document.getElementById("cancelSessionExercise")?.addEventListener("click", () => document.getElementById("sessionExerciseDialog")?.close());
-document.getElementById("sessionExerciseForm")?.addEventListener("submit", event => {
+document.getElementById("sessionExerciseForm")?.addEventListener("submit", async event => {
   event.preventDefault();
   const indexValue = document.getElementById("sessionExerciseIndex").value;
   const index = indexValue === "" ? null : Number(indexValue);
   const existing = Number.isInteger(index) ? currentSession.exercises[index] : null;
   const position = Number(document.getElementById("sessionExercisePosition").value) || 0;
-  const scope = document.querySelector('input[name="sessionExerciseScope"]:checked')?.value || "current";
   const type = document.getElementById("sessionExerciseType").value;
   const repTarget = document.getElementById("sessionExerciseReps").value.trim() || "1";
   const targetSets = Math.max(1, Number(document.getElementById("sessionExerciseSets").value) || 1);
@@ -793,6 +791,12 @@ document.getElementById("sessionExerciseForm")?.addEventListener("submit", event
     distanceKm: type === "cardio" ? "" : undefined,
     sets: type === "cardio" ? [] : Array.from({ length: targetSets }, () => createSessionSet(Number(document.getElementById("sessionExerciseWeight").value) || 0, parseExerciseRepTarget(repTarget)?.min || 1, repTarget))
   };
+  document.getElementById("sessionExerciseDialog").close();
+  const scope = await chooseSessionChangeScope();
+  if (!scope) {
+    document.getElementById("sessionExerciseDialog").showModal();
+    return;
+  }
   let change;
   if (existing) {
     currentSession.exercises.splice(index, 1);
@@ -803,7 +807,6 @@ document.getElementById("sessionExerciseForm")?.addEventListener("submit", event
     change = { type: "add", scope, position, exercise: sessionExerciseProgrammeShape(exercise) };
   }
   commitLiveSessionChange(change);
-  document.getElementById("sessionExerciseDialog").close();
   renderWorkoutSessionInPlace();
 });
 
