@@ -685,14 +685,16 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 /* Programme library: block-wide progress and compact activation controls. */
 .programme-card.active-programme {
   position:relative;
-  padding:14px 18px !important;
+  min-height:0 !important;padding:12px 18px 14px !important;
   background:#1b1b1b !important;
   border:1.5px solid var(--orange) !important;
   box-shadow:0 8px 22px rgba(0,0,0,.22) !important;
 }
 .programme-card.active-programme > .compact-card-header {
-  grid-template-columns:minmax(0,1fr) auto !important;align-items:start;margin-bottom:10px;
+  grid-template-columns:minmax(0,1fr) auto !important;align-items:start;min-height:0 !important;margin-bottom:5px;
 }
+.programme-card.active-programme > .compact-card-header h3 { margin-top:0;margin-bottom:4px; }
+.programme-card.active-programme > .compact-card-header p { margin-bottom:0; }
 .programme-percentage-badge {
   display:grid;place-items:center;min-width:56px;min-height:36px;padding:6px 10px;
   color:var(--orange);background:rgba(255,140,0,.08);border:1px solid rgba(255,140,0,.42);
@@ -706,7 +708,7 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 .programme-card-footer {
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin-top:10px;padding-top:0;border-top:0;
+  margin-top:8px;padding-top:0;border-top:0;
 }
 .programme-card-footer > span { display:flex;flex-wrap:wrap;gap:5px 12px;color:var(--grey);font-size:13px;font-weight:650; }
 .programme-card-footer > span span:first-child { color:var(--white); }
@@ -747,6 +749,8 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
   display:grid;grid-template-columns:58px minmax(0,1fr) minmax(128px,auto);align-items:center;gap:14px;padding:18px !important;
 }
 .measurements-summary-card > div { display:grid;gap:3px; }
+.measurements-summary-card .profile-goal-icon,
+.measurements-summary-card .profile-goal-icon svg { color:var(--orange) !important;stroke:var(--orange) !important; }
 .measurements-summary-card small { color:var(--grey);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase; }
 .measurements-summary-card strong { font-size:27px;line-height:1.1; }
 .measurements-summary-card span { color:var(--grey);font-size:13px; }
@@ -768,9 +772,12 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 #measurementsList .measurement-delete-button { color:#ef6666; }
 
 /* Active-session exercise controls: pencil in the title, compact Done at bottom-right. */
-.session-exercise-title { display:flex;align-items:center;gap:10px; }
+.session-exercise-title { display:flex;align-items:center;gap:10px;padding-right:0 !important; }
 .session-exercise-title h2 { min-width:0;margin-right:auto; }
-.session-exercise-title .session-edit-menu { position:relative;display:block;margin-left:0; }
+.session-exercise-title .display-star {
+  position:static !important;flex:0 0 auto;margin-left:auto !important;transform:none !important;
+}
+.session-exercise-title .session-edit-menu { position:relative;display:block;flex:0 0 auto;margin-left:0; }
 .session-edit-trigger {
   display:grid !important;place-items:center;width:40px !important;height:40px !important;min-height:0 !important;
   padding:0 !important;color:var(--orange) !important;background:transparent !important;border:0 !important;border-radius:10px !important;
@@ -801,7 +808,11 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 @keyframes programme-progress-grow { from { transform:scaleX(0); } to { transform:scaleX(1); } }
 .workout-summary-card.next-workout > .compact-card-header,
 .workout-summary-card.next-workout > .compact-card-header > div { align-self:center !important; }
-.workout-summary-card.next-workout h3 { margin-top:0;margin-bottom:5px; }
+.workout-summary-card.next-workout {
+  min-height:92px !important;padding-top:18px !important;padding-bottom:18px !important;
+}
+.workout-summary-card.next-workout > .compact-card-header > div { display:grid;align-content:center;min-height:54px; }
+.workout-summary-card.next-workout h3 { margin-top:0;margin-bottom:6px; }
 @media (max-width:480px) {
   .measurements-summary-card { grid-template-columns:48px minmax(0,1fr) minmax(108px,auto);gap:10px;padding:16px !important; }
   .measurements-summary-card strong { font-size:23px; }

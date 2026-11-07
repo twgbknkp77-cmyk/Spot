@@ -821,11 +821,10 @@ function positionSessionEditPanel(menu, panel) {
   const viewportPadding = 12;
   const panelHeight = panel.offsetHeight;
   const panelWidth = panel.offsetWidth;
-  const roomBelow = window.innerHeight - rect.bottom - viewportPadding;
-  const openBelow = roomBelow >= panelHeight || rect.top < panelHeight + viewportPadding;
-  const top = openBelow
-    ? Math.min(rect.bottom + gap, window.innerHeight - panelHeight - viewportPadding)
-    : Math.max(viewportPadding, rect.top - panelHeight - gap);
+  const top = Math.max(
+    viewportPadding,
+    Math.min(rect.top - gap, window.innerHeight - panelHeight - viewportPadding)
+  );
   const left = Math.min(
     window.innerWidth - panelWidth - viewportPadding,
     Math.max(viewportPadding, rect.right - panelWidth)
