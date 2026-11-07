@@ -1158,7 +1158,8 @@ function renderWorkoutSession() {
     menu.addEventListener("toggle", () => { if (menu.open) spotHaptic(10); });
 
     const summary = document.createElement("summary");
-    summary.textContent = "Edit";
+    summary.innerHTML = '<svg aria-hidden="true"><use href="#icon-edit"></use></svg>';
+    summary.className = "session-edit-trigger";
     summary.setAttribute("aria-label", `${exercise.name} options`);
 
     const menuPanel = document.createElement("div");
@@ -1268,6 +1269,7 @@ function renderWorkoutSession() {
       deleteExerciseButton
     );
     menu.append(summary, menuPanel);
+    titleRow.appendChild(menu);
     card.append(collapsedButton, titleRow);
 
     const actionRow = document.createElement("div");
@@ -1454,7 +1456,6 @@ function renderWorkoutSession() {
     card.appendChild(effort);
 
     actionRow.appendChild(completeButton);
-    actionRow.appendChild(menu);
     card.appendChild(actionRow);
 
     container.appendChild(card);

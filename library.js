@@ -111,6 +111,9 @@ async function requestProgrammeActivation(id) {
   const hasProgress = programme.currentWeek > 1 || getWorkoutHistory().some(
     session => session.programmeId === id
   );
+  const replacingActive = Boolean(
+    getActiveProgrammeId() && getActiveProgrammeId() !== id
+  );
 
   if (!hasProgress && !getActiveProgrammeId()) {
     setActiveProgramme(id);
@@ -126,9 +129,11 @@ async function requestProgrammeActivation(id) {
     continueButton.textContent = `Continue from Week ${programme.currentWeek}`;
   }
   if (message) {
-    message.textContent = hasProgress
+    message.textContent = replacingActive
+      ? "Activating this programme will pause your current programme. Its history and progress will remain saved."
+      : hasProgress
       ? "Start a fresh run or continue from where you left off."
-      : "Activating this will pause your current programme without deleting its progress.";
+      : "Choose how you want to begin this programme.";
   }
 
   document.getElementById("activationDialog")?.showModal();
@@ -1187,13 +1192,15 @@ function renderLibrary() {
         : `${programme.durationWeeks} weeks • Week ${programme.currentWeek}`;
     copy.append(title, details);
 
-    const chevron = document.createElement("span");
-    chevron.className = "programme-card-chevron";
-    chevron.setAttribute("aria-hidden", "true");
-    chevron.innerHTML = '<svg><use href="#icon-arrow-right"></use></svg>';
     const controls = document.createElement("div");
     controls.className = "programme-card-controls";
-    controls.appendChild(chevron);
+    if (isActive) {
+      const progress = programmeBlockProgress(programme, history);
+      const percentageBadge = document.createElement("span");
+      percentageBadge.className = "programme-percentage-badge";
+      percentageBadge.textContent = `${Number(progress.percentage.toFixed(1))}%`;
+      controls.appendChild(percentageBadge);
+    }
     header.append(copy, controls);
     card.appendChild(header);
 
@@ -1201,20 +1208,16 @@ function renderLibrary() {
       const progress = programmeBlockProgress(programme, history);
       const progressSection = document.createElement("div");
       progressSection.className = "programme-block-progress";
-      const percentage = document.createElement("strong");
-      percentage.textContent = `${Number(progress.percentage.toFixed(1))}%`;
       const progressTrack = document.createElement("div");
       progressTrack.className = "programme-block-progress-track";
       progressTrack.innerHTML = `<span style="width:${progress.percentage}%"></span>`;
-      const count = document.createElement("small");
-      count.textContent = `${progress.completed} of ${progress.total} workouts`;
-      progressSection.append(percentage, progressTrack, count);
+      progressSection.append(progressTrack);
       card.appendChild(progressSection);
 
       const footer = document.createElement("footer");
       footer.className = "programme-card-footer";
       const weekIndicator = document.createElement("span");
-      weekIndicator.textContent = `Week ${programme.currentWeek} of ${programme.durationWeeks}`;
+      weekIndicator.innerHTML = `<span>Week ${programme.currentWeek} of ${programme.durationWeeks}</span><span>${progress.completed} of ${progress.total} workouts</span>`;
       const deactivate = document.createElement("button");
       deactivate.type = "button";
       deactivate.className = "programme-deactivate-button";
@@ -1235,7 +1238,7 @@ function renderLibrary() {
       ? "Draft"
       : isActive
         ? ""
-        : "Start";
+        : "Activate";
     activationButton.hidden = isActive;
     activationButton.disabled = Boolean(programme.isDraft);
     activationButton.setAttribute(
@@ -1555,12 +1558,7 @@ function renderActiveWorkout() {
     const exerciseCount = (workout.exercises || []).length;
     detail.textContent = `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"}`;
     copy.append(title, detail);
-    const chevron = document.createElement("span");
-    chevron.className = "workout-card-chevron";
-    chevron.setAttribute("aria-hidden", "true");
-    chevron.innerHTML =
-      '<svg><use href="#icon-arrow-right"></use></svg>';
-    header.append(copy, chevron);
+    header.append(copy);
 
     const startButton = document.createElement("button");
     startButton.type = "button";

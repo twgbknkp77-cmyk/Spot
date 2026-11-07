@@ -256,6 +256,7 @@ weightForm?.addEventListener(
         "Weight saved successfully!";
 
       updateDashboard();
+      if (typeof renderMeasurements === "function") renderMeasurements();
     } catch {
       weightMessage.textContent =
         "Unable to save your measurement.";

@@ -66,6 +66,32 @@ function renderMeasurements() {
         new Date(a.recordedAt)
     );
 
+  const summary = document.getElementById("measurementsSummary");
+  if (summary) {
+    const latest = weights[0];
+    const previous = weights[1];
+    if (!latest) {
+      summary.innerHTML = "";
+    } else {
+      const change = previous ? latest.weight - previous.weight : null;
+      summary.innerHTML = `
+        <article class="card measurements-summary-card">
+          <span class="profile-goal-icon" aria-hidden="true">
+            <svg><use href="#icon-target"></use></svg>
+          </span>
+          <div>
+            <small>Latest Bodyweight</small>
+            <strong>${latest.weight.toFixed(1)} kg</strong>
+            <span>${new Date(`${latest.date}T12:00:00`).toLocaleDateString("en-GB", {
+              day: "numeric", month: "long", year: "numeric"
+            })}</span>
+          </div>
+          <p>${change === null ? "First measurement" : `${change >= 0 ? "+" : ""}${change.toFixed(1)} kg from previous`}</p>
+        </article>
+      `;
+    }
+  }
+
   container.innerHTML = "";
 
   if (weights.length === 0) {
@@ -100,14 +126,16 @@ function renderMeasurements() {
     actions.className = "measurement-actions";
 
     const editButton = document.createElement("button");
-    editButton.textContent = "Edit";
+    editButton.innerHTML = '<svg aria-hidden="true"><use href="#icon-edit"></use></svg>';
+    editButton.setAttribute("aria-label", `Edit ${entry.weight.toFixed(1)} kg measurement`);
     editButton.className = "measurement-edit-button";
     editButton.addEventListener("click", () => {
       openMeasurementEditor(entry.id);
     });
 
     const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
+    deleteButton.innerHTML = '<svg aria-hidden="true"><use href="#icon-trash"></use></svg>';
+    deleteButton.setAttribute("aria-label", `Delete ${entry.weight.toFixed(1)} kg measurement`);
     deleteButton.className = "measurement-delete-button";
     deleteButton.addEventListener("click", async () => {
       if (!await showSpotConfirm(
@@ -135,6 +163,10 @@ function renderMeasurements() {
     container.appendChild(card);
   });
 }
+
+document.getElementById("measurementsAddWeight")?.addEventListener("click", () => {
+  document.getElementById("openWeightModal")?.click();
+});
 
 
 // OPEN THE EDIT MEASUREMENT POP-UP
