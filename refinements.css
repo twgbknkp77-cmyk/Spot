@@ -784,9 +784,15 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 }
 .session-edit-trigger svg { width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2; }
 .session-exercise-title .session-edit-panel {
-  position:fixed !important;z-index:2200 !important;right:auto !important;bottom:auto !important;
-  width:min(230px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow-y:auto;
+  position:absolute !important;z-index:2200 !important;top:calc(100% + 8px) !important;right:0 !important;
+  bottom:auto !important;left:auto !important;width:min(230px,calc(100vw - 24px));
+  max-height:calc(100vh - 24px);overflow-y:auto;
 }
+.session-exercise-title .session-edit-menu.opens-up .session-edit-panel {
+  top:auto !important;bottom:calc(100% + 8px) !important;
+}
+.session-exercise-card:not(.exercise-is-collapsed) { overflow:visible !important; }
+.session-exercise-card:has(.session-edit-menu[open]) { position:relative;z-index:120; }
 .session-exercise-actions { grid-template-columns:minmax(0,1fr) auto !important;align-items:center; }
 .session-exercise-actions .exercise-complete-button {
   grid-column:2;width:auto !important;min-width:78px !important;min-height:40px !important;margin:0 !important;padding:8px 15px !important;
@@ -811,8 +817,14 @@ use[href="#icon-arrow-left"],use[href="#icon-arrow-right"] { color:var(--orange)
 .workout-summary-card.next-workout {
   min-height:92px !important;padding-top:18px !important;padding-bottom:18px !important;
 }
-.workout-summary-card.next-workout > .compact-card-header > div { display:grid;align-content:center;min-height:54px; }
-.workout-summary-card.next-workout h3 { margin-top:0;margin-bottom:6px; }
+.workout-summary-card.next-workout > .compact-card-header {
+  display:flex !important;align-items:center !important;min-height:56px !important;height:56px;
+}
+.workout-summary-card.next-workout > .compact-card-header > div {
+  display:flex;flex-direction:column;justify-content:center;min-height:0;height:auto;
+}
+.workout-summary-card.next-workout h3 { margin:0 0 7px !important;line-height:1.15; }
+.workout-summary-card.next-workout p { margin:0 !important;line-height:1.2; }
 @media (max-width:480px) {
   .measurements-summary-card { grid-template-columns:48px minmax(0,1fr) minmax(108px,auto);gap:10px;padding:16px !important; }
   .measurements-summary-card strong { font-size:23px; }

@@ -817,20 +817,15 @@ function positionSessionEditPanel(menu, panel) {
   if (!menu?.open || !panel) return;
   const rect = menu.querySelector("summary")?.getBoundingClientRect();
   if (!rect) return;
-  const gap = 8;
   const viewportPadding = 12;
   const panelHeight = panel.offsetHeight;
-  const panelWidth = panel.offsetWidth;
-  const top = Math.max(
-    viewportPadding,
-    Math.min(rect.top - gap, window.innerHeight - panelHeight - viewportPadding)
+  const visualHeight = window.visualViewport?.height || window.innerHeight;
+  const roomBelow = visualHeight - rect.bottom - viewportPadding;
+  const roomAbove = rect.top - viewportPadding;
+  menu.classList.toggle(
+    "opens-up",
+    roomBelow < panelHeight && roomAbove > roomBelow
   );
-  const left = Math.min(
-    window.innerWidth - panelWidth - viewportPadding,
-    Math.max(viewportPadding, rect.right - panelWidth)
-  );
-  panel.style.top = `${top}px`;
-  panel.style.left = `${left}px`;
 }
 
 
